@@ -1,6 +1,0 @@
-id=rg477m_fan_profiles
-name=RG477M Fan Profiles
-version=1.0
-versionCode=1
-author=atrolle224
-description=Silent, Smart, Extreme and Custom fan curves for the RG477M on GammaOS. Tap Action in Magisk to switch profile. GammaOS's own modes and its thermal safety guard keep working.

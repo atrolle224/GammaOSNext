@@ -1,0 +1,14 @@
+#!/system/bin/sh
+# RG477M Toolkit command, e.g. from Termux:  su -c rg477m fan smart
+MODDIR=/data/adb/modules/rg477m_toolkit; . $MODDIR/tk.sh
+case "$1" in
+  fan) set_fan "$2" ;; perf) set_perf "$2" ;; charge) set_charge "$2" ;;
+  refresh) set_refresh "$2" ;; res) set_res "$2" ;; status|"") ;;
+  *) echo "usage: rg477m [status]
+  fan     smart|silent|extreme|custom|gammaos
+  perf    balanced|efficient|battery|normal|max|powersave
+  charge  80|90|bypass|off
+  refresh 60|90|120
+  res     100|87|75"; exit 1 ;;
+esac
+sleep 1; status
