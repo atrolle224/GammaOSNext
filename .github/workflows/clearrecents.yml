@@ -1,0 +1,32 @@
+name: clearrecents dex
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ['tools/clearrecents/**', '.github/workflows/clearrecents.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  dex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          set -e
+          mkdir -p out cls
+          javac --release 8 -d cls tools/clearrecents/ClearRecents.java
+          BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          "$ANDROID_HOME/build-tools/$BT/d8" --release --min-api 26 --output out cls/ClearRecents.class
+          mv out/classes.dex clearrecents.dex
+          ls -l clearrecents.dex
+      - name: Publish to the clearrecents-bin branch
+        run: |
+          set -e
+          mkdir pub && cp clearrecents.dex pub/ && cd pub
+          git init -q -b clearrecents-bin
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com add clearrecents.dex
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "clearrecents.dex (run $GITHUB_RUN_ID)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" clearrecents-bin
