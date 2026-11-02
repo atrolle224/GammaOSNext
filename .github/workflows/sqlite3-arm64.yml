@@ -1,0 +1,25 @@
+name: sqlite3 for arm64 Android
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/sqlite3-arm64.yml']
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build a static sqlite3 shell with the NDK
+        run: |
+          set -e
+          curl -fsSLO https://www.sqlite.org/2024/sqlite-amalgamation-3460100.zip
+          echo "77823cb110929c2bcb0f5d48e4833b5c59a8a6db  sqlite-amalgamation-3460100.zip" | sha1sum -c -
+          unzip -q sqlite-amalgamation-3460100.zip
+          cd sqlite-amalgamation-3460100
+          CC=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang
+          $CC -O2 -static -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
+            -DHAVE_READLINE=0 shell.c sqlite3.c -o sqlite3 -lm
+          $ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip sqlite3
+          file sqlite3; ls -l sqlite3; sha256sum sqlite3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sqlite3-arm64
+          path: sqlite-amalgamation-3460100/sqlite3
