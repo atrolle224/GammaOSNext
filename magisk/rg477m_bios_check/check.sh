@@ -26,6 +26,7 @@ while IFS= read -r f; do
     say "OK    [$sys] $f  = good $name, $note$want"
   else
     case "$(echo "${f##*/}" | tr A-Z a-z)" in
+      *.mec|*.nvm|*.erom|*.rom1|*.rom2) continue ;;   # a PS2 BIOS's companion files (settings, DVD/ROM parts)
       scph*|*ps2*|ps2-*) if [ "$s" -ge 4000000 ]; then say "PS2?  $f  ($((s/1024)) KB: a PS2 BIOS size; ARMSX2 checks it itself)"; found_sys="$found_sys PS2"
                          else say "?     $f  (not a known good PS1 dump: may be modified, overdumped or another revision)"; fi ;;
       dc_flash*|firmware*) say "INFO  $f  (differs per console by design; Flycast/melonDS can make their own)" ;;
