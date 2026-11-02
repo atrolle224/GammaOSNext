@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     paths: ['.github/workflows/sqlite3-arm64.yml']
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,3 +25,11 @@ jobs:
         with:
           name: sqlite3-arm64
           path: sqlite-amalgamation-3460100/sqlite3
+      - name: Publish to the sqlite3-bin branch
+        run: |
+          set -e
+          mkdir pub && cp sqlite-amalgamation-3460100/sqlite3 pub/ && cd pub
+          git init -q -b sqlite3-bin
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com add sqlite3
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "sqlite3 3.46.1, static arm64 (run $GITHUB_RUN_ID)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" sqlite3-bin
