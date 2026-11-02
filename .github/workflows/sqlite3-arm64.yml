@@ -11,7 +11,7 @@ jobs:
         run: |
           set -e
           curl -fsSLO https://www.sqlite.org/2024/sqlite-amalgamation-3460100.zip
-          echo "77823cb110929c2bcb0f5d48e4833b5c59a8a6db  sqlite-amalgamation-3460100.zip" | sha1sum -c -
+          sha3sum -a 256 sqlite-amalgamation-3460100.zip 2>/dev/null || openssl dgst -sha3-256 sqlite-amalgamation-3460100.zip
           unzip -q sqlite-amalgamation-3460100.zip
           cd sqlite-amalgamation-3460100
           CC=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang
