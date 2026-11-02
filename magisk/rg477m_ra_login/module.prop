@@ -1,0 +1,6 @@
+id=rg477m_ra_login
+name=RetroAchievements one sign-in
+version=1
+versionCode=1
+author=atrolle224
+description=Sign in to RetroAchievements once (RetroArch, or any of Dolphin, PPSSPP, Flycast, melonDS, ARMSX2) and the login token is copied to the others. No password is stored; nothing leaves the device. Action: copy again.
