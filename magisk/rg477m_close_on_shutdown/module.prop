@@ -1,0 +1,6 @@
+id=rg477m_close_on_shutdown
+name=RG477M Close apps on shutdown
+version=1
+versionCode=1
+author=atrolle224
+description=When the 477M shuts down or reboots, every user-installed app except Daijishou (and the keyboard and Magisk) is closed first and Recents is cleared. More apps to keep: /data/adb/rg477m/keep_open.conf.
