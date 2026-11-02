@@ -7,5 +7,5 @@ echo "0 0" > /proc/mtk_battery_cmd/current_cmd 2>/dev/null
   [ "$(getprop persist.gammaos.fan_mode)" = custom ] && setprop persist.gammaos.fan_mode auto
   r=$(getprop persist.rg477m.res); [ -n "$r" ] && [ "$r" != 100 ] && { wm size reset; wm density reset; }
   [ "$(getprop persist.rg477m.refresh)" = 90 ] && setprop persist.gammaos.refresh.rate 120
-  for p in fan_profile perf_profile charge refresh res charge_heat; do resetprop -p --delete persist.rg477m.$p 2>/dev/null; done
+  for p in fan_profile perf_profile charge refresh res charge_heat gamemode gm_perf gm_fan gm_refresh gm_charge gm_saved gm_active backup; do resetprop -p --delete persist.rg477m.$p 2>/dev/null; done
 ) &

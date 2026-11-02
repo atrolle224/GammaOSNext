@@ -1,0 +1,6 @@
+id=rg477m_bios_check
+name=RG477M BIOS check
+version=1
+versionCode=1
+author=atrolle224
+description=One-time, read-only: finds BIOS files on internal storage and SD cards, checks PS1, Saturn, Dreamcast and DS BIOS against known good dumps, flags PS2 BIOS files and lists what is missing. Report in Download/477m_bios_report.txt. Removes itself on reboot.

@@ -1,6 +1,6 @@
 id=rg477m_toolkit
 name=RG477M Toolkit
-version=1.0
-versionCode=10
+version=1.1
+versionCode=11
 author=atrolle224
-description=Fan curves, in-between performance profiles, charge limit and bypass charging, 90 Hz, render resolution. Tap Action for the menu (volume keys). Works alongside GammaOS's own settings and its thermal guard.
+description=Game Mode (automatic profile, fan, bypass charging and 120 Hz while a game is open), daily save backup to the SD card, fan curves, in-between performance profiles, charge limit and bypass charging, 90 Hz, render resolution. Tap Action for the menu (volume keys). Works alongside GammaOS's own settings and its thermal guard.
