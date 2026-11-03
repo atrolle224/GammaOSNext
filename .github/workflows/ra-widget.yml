@@ -1,0 +1,41 @@
+name: RA Widget 477M
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/ra-widget/**'
+      - '.github/workflows/ra-widget.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build
+        env:
+          RG477M_KEYSTORE: ${{ github.workspace }}/ports/keys/rg477m-ports.keystore
+        run: |
+          set -e
+          cd apps/ra-widget
+          gradle --no-daemon assembleRelease
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/out/ra-widget-477m.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ra-widget-477m
+          path: out/ra-widget-477m.apk
