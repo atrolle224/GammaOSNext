@@ -153,6 +153,11 @@ edit("Assets/Scripts/ClientRunner.cs", """	private MobileJoystick movementJoysti
 edit("Assets/Scripts/ClientRunner.cs", """	                                          && UserPreferences.UseMouseOnMobile.CurrentValue == 0);""", """	                                          && UserPreferences.UseMouseOnMobile.CurrentValue == 0
 	                                          && !Gamepad477M.Active);""")
 
+# MobileUO hides the game cursor on phones; draw it while the controller drives it
+edit("Assets/Scripts/ClassicUO/src/ClassicUO.Client/Game/GameCursor.cs",
+     "            if (!Settings.GlobalSettings.RunMouseInASeparateThread)\n            {\n                Graphic = AssignGraphicByState();",
+     "            if (!Settings.GlobalSettings.RunMouseInASeparateThread || Gamepad477M.Active)\n            {\n                Graphic = AssignGraphicByState();")
+
 # first launch goes straight to UOAlive: download its package, then the login screen
 edit("Assets/Scripts/ServerConfiguration/ServerConfigurationModel.cs",
      """        SupportedServerConfigurations = new List<ServerConfiguration>(serverConfigurations);
