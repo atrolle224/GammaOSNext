@@ -1,0 +1,61 @@
+name: Ports - Fallout crash symbols
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  symbols:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repo: alexbatalov/fallout1-ce
+            ref: 0609bcfd0ec40ff0571d0f57fab2821eb461dc8b
+            name: Fallout 477M
+            id: com.alexbatalov.falloutce.rg477m
+            lib: libfallout-ce.so
+            addrs: 0x1460a0 0x1453f4 0x1181ec 0x12c034 0xf0fe4 0x13a3a8 0x139e3c 0xac248 0xcaf18
+          - repo: alexbatalov/fallout2-ce
+            ref: e97087b9582f37075db347a89898887320753f8b
+            name: Fallout 2 477M
+            id: com.alexbatalov.fallout2ce.rg477m
+            lib: libfallout2-ce.so
+            addrs: 0x11b670 0x1a6a78 0x13f708
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          ref: ${{ matrix.ref }}
+          path: game
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Same build as the APK
+        run: |
+          set -e
+          python3 ports/fallout/apply.py game "${{ matrix.name }}" "${{ matrix.id }}"
+          cd game/os/android
+          cp "$GITHUB_WORKSPACE/ports/keys/rg477m-ports.keystore" rg477m.keystore
+          printf 'storeFile=rg477m.keystore\nstorePassword=android\nkeyAlias=rg477m\nkeyPassword=android\n' > release-keystore.properties
+          ./gradlew --no-daemon assembleRelease
+
+      - name: Crash addresses to source lines
+        run: |
+          set -e
+          ndk=$(ls -d "$ANDROID_HOME"/ndk/* | sort -V | tail -1)
+          tools=$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin
+          find game/os/android/app/build -name "${{ matrix.lib }}" -path '*arm64*' | while read -r so; do
+            echo "== $so"
+            "$tools/llvm-readelf" -n "$so" | grep -i "build id"
+          done
+          so=$(find game/os/android/app/build/intermediates/cxx -name "${{ matrix.lib }}" -path '*arm64*' | head -1)
+          "$tools/llvm-addr2line" -f -i -p -C -e "$so" ${{ matrix.addrs }}
