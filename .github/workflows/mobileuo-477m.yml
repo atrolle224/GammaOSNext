@@ -1,0 +1,74 @@
+name: MobileUO 477M
+
+# Needs three repository secrets from the owner's Unity account:
+# UNITY_EMAIL, UNITY_PASSWORD and UNITY_LICENSE (the contents of Unity_lic.ulf).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Unity secrets
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          missing=""
+          [ -n "$UNITY_EMAIL" ] || missing="$missing UNITY_EMAIL"
+          [ -n "$UNITY_PASSWORD" ] || missing="$missing UNITY_PASSWORD"
+          [ -n "$UNITY_LICENSE" ] || missing="$missing UNITY_LICENSE"
+          [ -z "$missing" ] || { echo "::error::missing repository secrets:$missing"; exit 1; }
+
+      - uses: jlumbroso/free-disk-space@v1.3.1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: MobileUO/MobileUO
+          path: mobileuo
+          lfs: true
+
+      - name: Controller play and UOAlive settings
+        run: python3 ports/mobileuo/apply.py mobileuo
+
+      - name: Signing key
+        id: key
+        run: echo "b64=$(base64 -w0 ports/keys/rg477m-ports.keystore)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: mobileuo/Library
+          key: mobileuo-library-${{ hashFiles('mobileuo/Packages/manifest.json', 'mobileuo/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: mobileuo-library-
+
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: mobileuo
+          targetPlatform: Android
+          customParameters: -BUILD_ENV Staging -GITHUB_BUILD_NUMBER ${{ github.run_number }}
+          androidKeystoreName: rg477m.keystore
+          androidKeystoreBase64: ${{ steps.key.outputs.b64 }}
+          androidKeystorePass: android
+          androidKeyaliasName: rg477m
+          androidKeyaliasPass: android
+
+      - name: APK
+        run: |
+          mkdir -p out
+          cp build/Android/Android.apk out/mobileuo-477m.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobileuo-477m
+          path: out/mobileuo-477m.apk
