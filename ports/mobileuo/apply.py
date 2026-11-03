@@ -133,12 +133,25 @@ edit("Assets/Scripts/ClientRunner.cs", """	        gameScene.JoystickInput = new
         }
 
         Gamepad477M.Poll();
+        if (Gamepad477M.Active != padWasActive)
+        {
+	        padWasActive = Gamepad477M.Active;
+	        UpdateMovementJoystick();
+        }
         if (Gamepad477M.Active && Client.Game.Scene is GameScene padScene
             && (!movementJoystick.isActiveAndEnabled || movementJoystick.Input == UnityEngine.Vector2.zero))
         {
 	        padScene.JoystickInput = new Microsoft.Xna.Framework.Vector2(Gamepad477M.Move.x, -1 * Gamepad477M.Move.y);
         }
 """)
+
+# the on-screen joystick hides while the controller is in use, and returns on touch
+edit("Assets/Scripts/ClientRunner.cs", """	private MobileJoystick movementJoystick;
+""", """	private MobileJoystick movementJoystick;
+	private bool padWasActive;
+""")
+edit("Assets/Scripts/ClientRunner.cs", """	                                          && UserPreferences.UseMouseOnMobile.CurrentValue == 0);""", """	                                          && UserPreferences.UseMouseOnMobile.CurrentValue == 0
+	                                          && !Gamepad477M.Active);""")
 
 # first launch goes straight to UOAlive: download its package, then the login screen
 edit("Assets/Scripts/ServerConfiguration/ServerConfigurationModel.cs",
