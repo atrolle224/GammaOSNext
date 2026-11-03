@@ -1,0 +1,32 @@
+name: SGSR shader check
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'retroarch/sgsr/**'
+      - '.github/workflows/sgsr-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile both stages for Vulkan
+        run: |
+          set -e
+          sudo apt-get install -y -q glslang-tools >/dev/null
+          python3 - retroarch/sgsr/shaders/sgsr1.slang <<'PY'
+          import re, sys
+          s = open(sys.argv[1]).read()
+          s = re.sub(r'#pragma parameter.*\n', '', s)
+          head, rest = s.split('#pragma stage vertex')
+          vert, frag = rest.split('#pragma stage fragment')
+          open('sg.vert', 'w').write(head + vert)
+          open('sg.frag', 'w').write(head + frag)
+          PY
+          glslangValidator -V sg.vert -o vert.spv
+          glslangValidator -V sg.frag -o frag.spv
