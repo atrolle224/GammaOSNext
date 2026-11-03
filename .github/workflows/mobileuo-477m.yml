@@ -55,6 +55,9 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           projectPath: mobileuo
+          # the 477M patch is applied on top of the checkout
+          allowDirtyBuild: true
+          versioning: None
           targetPlatform: Android
           customParameters: -BUILD_ENV Staging -GITHUB_BUILD_NUMBER ${{ github.run_number }}
           androidKeystoreName: rg477m.keystore
