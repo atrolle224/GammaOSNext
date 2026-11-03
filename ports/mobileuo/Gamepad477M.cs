@@ -41,6 +41,15 @@ public static class Gamepad477M
         KeyEvents.Clear();
 
         var pads = Gamepad.all;
+        if (ControlsHelp477M.Visible)
+        {
+            Release();
+            if (pads.Count > 0 && AnyButtonPressed(pads))
+            {
+                ControlsHelp477M.Close();
+            }
+            return;
+        }
         if (pads.Count == 0)
         {
             Release();
@@ -75,6 +84,12 @@ public static class Gamepad477M
             Cursor.x = Mathf.Clamp(Cursor.x, 0f, Screen.width - 1);
             Cursor.y = Mathf.Clamp(Cursor.y, 0f, Screen.height - 1);
             Moved = true;
+        }
+        if (Pressed(pads, p => p.leftStickButton))
+        {
+            ControlsHelp477M.Show();
+            Release();
+            return;
         }
         if (Pressed(pads, p => p.rightStickButton))
         {
