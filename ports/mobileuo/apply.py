@@ -139,6 +139,31 @@ edit("Assets/Scripts/ClientRunner.cs", """	        gameScene.JoystickInput = new
         }
 """)
 
+# first launch goes straight to UOAlive: download its package, then the login screen
+edit("Assets/Scripts/ServerConfiguration/ServerConfigurationModel.cs",
+     """        SupportedServerConfigurations = new List<ServerConfiguration>(serverConfigurations);
+    }
+""", """        SupportedServerConfigurations = new List<ServerConfiguration>(serverConfigurations);
+
+        if (ServerConfigurations.Count == 0)
+        {
+            var uoAlive = serverConfigurations.FirstOrDefault(x => x.UoServerUrl == "login.uoalive.com");
+            if (uoAlive != null)
+            {
+                var config = uoAlive.Clone();
+                config.Name = "UOAlive";
+                config.AllFilesDownloaded = false;
+                ServerConfigurations.Add(config);
+                config.CreateDirectoryToSaveFiles();
+                SaveServerConfigurations();
+                PlayerPrefs.SetString(defaultConfigurationNameKey, config.Name);
+                PlayerPrefs.Save();
+                DefaultConfiguration = config;
+            }
+        }
+    }
+""")
+
 # UOAlive's current mobile package (uoalive.com/playnow.html)
 edit("Assets/Resources/SupportedServerConfigurations.asset",
      """    FileDownloadServerUrl: mobile.uoalive.com/uoalive_v1.zip
