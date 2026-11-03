@@ -1,0 +1,58 @@
+name: Ports - Fallout 1 and 2 CE (RG477M)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ports/fallout/**'
+      - 'ports/keys/**'
+      - '.github/workflows/ports-fallout.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repo: alexbatalov/fallout1-ce
+            name: Fallout 477M
+            id: com.alexbatalov.falloutce.rg477m
+            out: fallout1-ce-477m
+          - repo: alexbatalov/fallout2-ce
+            name: Fallout 2 477M
+            id: com.alexbatalov.fallout2ce.rg477m
+            out: fallout2-ce-477m
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          path: game
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Controller input and 477M packaging
+        run: python3 ports/fallout/apply.py game "${{ matrix.name }}" "${{ matrix.id }}"
+
+      - name: Build
+        run: |
+          set -e
+          cd game/os/android
+          cp "$GITHUB_WORKSPACE/ports/keys/rg477m-ports.keystore" rg477m.keystore
+          printf 'storeFile=rg477m.keystore\nstorePassword=android\nkeyAlias=rg477m\nkeyPassword=android\n' > release-keystore.properties
+          ./gradlew --no-daemon assembleRelease
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/out/${{ matrix.out }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.out }}
+          path: out/${{ matrix.out }}.apk
