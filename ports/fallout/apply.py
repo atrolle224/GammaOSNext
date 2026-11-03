@@ -80,6 +80,25 @@ edit(i, "        case SDL_FINGERDOWN:\n", f"""        case SDL_CONTROLLERDEVICEA
         case SDL_FINGERDOWN:
 """)
 
+# Crash fixes for Android's allocator, which faults on reads past a buffer.
+if src_dir == "src":
+    # a global script that can't be opened reached programFatalError, which returns
+    # although it is declared noreturn
+    edit(os.path.join(root, "src/sfall_global_scripts.cc"),
+         "        Program* program = programCreateByPath(path.c_str());\n",
+         """        File* probe = fileOpen(path.c_str(), "rb");
+        if (probe == nullptr) {
+            continue;
+        }
+        fileClose(probe);
+
+        Program* program = programCreateByPath(path.c_str());
+""")
+else:
+    # the movie decoder's copy offset is signed (as in fallout2-ce); a byte
+    # turned -8 into 248 and read past the frame buffer
+    edit(os.path.join(root, "src/movie_lib.cc"), "uint8_t getOffset(uint16_t v)", "int getOffset(uint16_t v)", count=2)
+
 # RG477M: own package beside the original, arm64 only, one signing key
 g = os.path.join(root, "os/android/app/build.gradle")
 with open(g) as f:
