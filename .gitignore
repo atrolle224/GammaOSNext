@@ -1,3 +1,4 @@
 apps/*/build/
 apps/*/app/build/
 apps/*/.gradle/
+apps/*/app/src/main/jniLibs/

@@ -1,0 +1,51 @@
+name: OSRS Pad 477M
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/osrs-pad/**'
+      - '.github/workflows/osrs-pad.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Controller helper for arm64
+        run: |
+          set -e
+          cc=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang
+          out=apps/osrs-pad/app/src/main/jniLibs/arm64-v8a
+          mkdir -p "$out"
+          "$cc" -O2 -Wall -Wextra -Werror -fPIE -pie -o "$out/libosrspad.so" apps/osrs-pad/native/osrspad.c -lm
+          "$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip" "$out/libosrspad.so"
+
+      - name: Build
+        env:
+          RG477M_KEYSTORE: ${{ github.workspace }}/ports/keys/rg477m-ports.keystore
+        run: |
+          set -e
+          cd apps/osrs-pad
+          gradle --no-daemon assembleRelease
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/out/osrs-pad-477m.apk"
+          unzip -l "$GITHUB_WORKSPACE/out/osrs-pad-477m.apk" | grep libosrspad.so
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: osrs-pad-477m
+          path: out/osrs-pad-477m.apk
