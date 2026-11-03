@@ -1,0 +1,47 @@
+name: Ports - Perfect Dark (RG477M)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ports/common/**'
+      - '.github/workflows/ports-perfect-dark.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: izzy2lost/perfect_dark
+          path: game
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 477M packaging
+        run: python3 ports/common/rg477m_android.py game/android/app/build.gradle game/android/app/src/main/res/values/strings.xml com.perfectdark.port.rg477m "Perfect Dark 477M"
+
+      - name: Build
+        run: |
+          set -e
+          cd game/android
+          cp "$GITHUB_WORKSPACE/ports/keys/rg477m-ports.keystore" rg477m.keystore
+          printf 'storeFile=rg477m.keystore\nstorePassword=android\nkeyAlias=rg477m\nkeyPassword=android\n' > keystore.properties
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp app/build/outputs/apk/release/*.apk "$GITHUB_WORKSPACE/out/perfect-dark-477m.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: perfect-dark-477m
+          path: out/perfect-dark-477m.apk
