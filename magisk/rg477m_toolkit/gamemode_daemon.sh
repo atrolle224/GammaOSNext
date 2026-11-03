@@ -4,7 +4,7 @@
 # the settings from before come back. Off with persist.rg477m.gamemode=off.
 # apps.conf gives one app (or a pattern) its own profile: "pkg perf fan refresh", "-" = Game Mode's.
 MODDIR=${0%/*}; . "$MODDIR/common.sh"; . "$MODDIR/tk.sh"
-GAMES='com.retroarch.* org.dolphinemu.* com.armsx2.* com.rfandango.haku_x* org.ppsspp.* com.flycast.emulator* org.mupen64plusae.* com.github.stenzek.duckstation* com.dsemu.drastic* com.ast.openmw* org.opennv.* gamehub.* com.antutu.ABenchMark com.xiaoji.* com.winlator* com.nanodata.* come.nanodata.* *citron* *eden* *gamenative* *azahar* *lime3ds* *yabasanshiro* *shipwright* *harkinian* *starship* *spaghetti* *ghostship* *fallout* *halo* *perfect_dark* *diii4a*'
+GAMES='com.retroarch.* org.dolphinemu.* com.armsx2.* com.rfandango.haku_x* org.ppsspp.* com.flycast.emulator* org.mupen64plusae.* com.github.stenzek.duckstation* com.dsemu.drastic* com.ast.openmw* org.opennv.* gamehub.* com.antutu.ABenchMark com.xiaoji.* com.winlator* com.nanodata.* come.nanodata.* *citron* *eden* *gamenative* *azahar* *lime3ds* *yabasanshiro* *shipwright* *harkinian* *starship* *spaghetti* *ghostship* *fallout* *halo* *perfect_dark* *diii4a* com.mobileuo.*'
 USER_LIST=$CFG/games.conf
 APPS=$CFG/apps.conf
 [ -f "$APPS" ] || cp "$MODDIR/apps.conf" "$APPS" 2>/dev/null

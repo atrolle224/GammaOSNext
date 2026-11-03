@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -6,6 +7,7 @@ using UnityEngine.InputSystem.Controls;
 // Controller play for the RG477M, laid out like a Steam Input desktop config:
 // left stick walks, right stick moves the cursor, A/B are the mouse buttons,
 // X double-clicks, the d-pad is a 12-slot hotbar (F1-F12 with L1/R1).
+// Every connected controller plays at once (the built-in one and a Bluetooth pad).
 // Touching the screen hands control back to touch.
 public static class Gamepad477M
 {
@@ -38,8 +40,8 @@ public static class Gamepad477M
         LeftDown = LeftUp = RightDown = RightUp = DoubleClick = Moved = false;
         KeyEvents.Clear();
 
-        var pad = Gamepad.current;
-        if (pad == null)
+        var pads = Gamepad.all;
+        if (pads.Count == 0)
         {
             Release();
             return;
@@ -51,9 +53,9 @@ public static class Gamepad477M
             return;
         }
 
-        var left = pad.leftStick.ReadValue();
-        var right = pad.rightStick.ReadValue();
-        if (!Active && (left.magnitude > 0.3f || right.magnitude > 0.3f || AnyButtonPressed(pad)))
+        var left = Strongest(pads, p => p.leftStick.ReadValue());
+        var right = Strongest(pads, p => p.rightStick.ReadValue());
+        if (!Active && (left.magnitude > 0.3f || right.magnitude > 0.3f || AnyButtonPressed(pads)))
         {
             Active = true;
             Cursor = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
@@ -74,42 +76,42 @@ public static class Gamepad477M
             Cursor.y = Mathf.Clamp(Cursor.y, 0f, Screen.height - 1);
             Moved = true;
         }
-        if (pad.rightStickButton.wasPressedThisFrame)
+        if (Pressed(pads, p => p.rightStickButton))
         {
             Cursor = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
             Moved = true;
         }
 
-        LeftDown = pad.buttonSouth.wasPressedThisFrame;
-        LeftUp = pad.buttonSouth.wasReleasedThisFrame;
-        LeftHeld = pad.buttonSouth.isPressed;
-        RightDown = pad.buttonEast.wasPressedThisFrame;
-        RightUp = pad.buttonEast.wasReleasedThisFrame;
-        RightHeld = pad.buttonEast.isPressed;
-        DoubleClick = pad.buttonWest.wasPressedThisFrame;
-        NamesHeld = pad.leftTrigger.isPressed;
+        LeftDown = Pressed(pads, p => p.buttonSouth);
+        LeftHeld = Held(pads, p => p.buttonSouth);
+        LeftUp = Released(pads, p => p.buttonSouth);
+        RightDown = Pressed(pads, p => p.buttonEast);
+        RightHeld = Held(pads, p => p.buttonEast);
+        RightUp = Released(pads, p => p.buttonEast);
+        DoubleClick = Pressed(pads, p => p.buttonWest);
+        NamesHeld = Held(pads, p => p.leftTrigger);
 
-        Key(pad.buttonNorth, KeyCode.Tab);
-        Key(pad.rightTrigger, KeyCode.Return);
-        Key(pad.startButton, KeyCode.Escape);
-        Key(pad.selectButton, KeyCode.F12);
+        Key(pads, p => p.buttonNorth, KeyCode.Tab);
+        Key(pads, p => p.rightTrigger, KeyCode.Return);
+        Key(pads, p => p.startButton, KeyCode.Escape);
+        Key(pads, p => p.selectButton, KeyCode.F12);
 
-        Hotbar(pad);
+        Hotbar(pads);
     }
 
     // F1-F4 on the d-pad; with L1 held F5-F8, with R1 held F9-F12
-    private static void Hotbar(Gamepad pad)
+    private static void Hotbar(IReadOnlyList<Gamepad> pads)
     {
-        var bank = pad.leftShoulder.isPressed ? 4 : pad.rightShoulder.isPressed ? 8 : 0;
-        DpadButton(pad.dpad.up, KeyCode.F1 + bank);
-        DpadButton(pad.dpad.right, KeyCode.F2 + bank);
-        DpadButton(pad.dpad.down, KeyCode.F3 + bank);
-        DpadButton(pad.dpad.left, KeyCode.F4 + bank);
+        var bank = Held(pads, p => p.leftShoulder) ? 4 : Held(pads, p => p.rightShoulder) ? 8 : 0;
+        DpadButton(pads, p => p.dpad.up, KeyCode.F1 + bank);
+        DpadButton(pads, p => p.dpad.right, KeyCode.F2 + bank);
+        DpadButton(pads, p => p.dpad.down, KeyCode.F3 + bank);
+        DpadButton(pads, p => p.dpad.left, KeyCode.F4 + bank);
     }
 
-    private static void DpadButton(ButtonControl button, KeyCode key)
+    private static void DpadButton(IReadOnlyList<Gamepad> pads, Func<Gamepad, ButtonControl> button, KeyCode key)
     {
-        if (button.wasPressedThisFrame)
+        if (Pressed(pads, button))
         {
             if (dpadKey != KeyCode.None)
             {
@@ -118,32 +120,89 @@ public static class Gamepad477M
             dpadKey = key;
             KeyEvents.Add(new KeyValuePair<KeyCode, bool>(key, true));
         }
-        else if (button.wasReleasedThisFrame && dpadKey != KeyCode.None)
+        else if (Released(pads, button) && dpadKey != KeyCode.None)
         {
             KeyEvents.Add(new KeyValuePair<KeyCode, bool>(dpadKey, false));
             dpadKey = KeyCode.None;
         }
     }
 
-    private static void Key(ButtonControl button, KeyCode key)
+    private static void Key(IReadOnlyList<Gamepad> pads, Func<Gamepad, ButtonControl> button, KeyCode key)
     {
-        if (button.wasPressedThisFrame)
+        if (Pressed(pads, button))
         {
             KeyEvents.Add(new KeyValuePair<KeyCode, bool>(key, true));
         }
-        else if (button.wasReleasedThisFrame)
+        else if (Released(pads, button))
         {
             KeyEvents.Add(new KeyValuePair<KeyCode, bool>(key, false));
         }
     }
 
-    private static bool AnyButtonPressed(Gamepad pad)
+    private static Vector2 Strongest(IReadOnlyList<Gamepad> pads, Func<Gamepad, Vector2> stick)
     {
-        foreach (var control in pad.allControls)
+        var best = Vector2.zero;
+        for (var i = 0; i < pads.Count; i++)
         {
-            if (control is ButtonControl b && b.wasPressedThisFrame)
+            var v = stick(pads[i]);
+            if (v.sqrMagnitude > best.sqrMagnitude)
+            {
+                best = v;
+            }
+        }
+        return best;
+    }
+
+    private static bool Pressed(IReadOnlyList<Gamepad> pads, Func<Gamepad, ButtonControl> button)
+    {
+        for (var i = 0; i < pads.Count; i++)
+        {
+            if (button(pads[i]).wasPressedThisFrame)
             {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool Held(IReadOnlyList<Gamepad> pads, Func<Gamepad, ButtonControl> button)
+    {
+        for (var i = 0; i < pads.Count; i++)
+        {
+            if (button(pads[i]).isPressed)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // released on one pad and held on none
+    private static bool Released(IReadOnlyList<Gamepad> pads, Func<Gamepad, ButtonControl> button)
+    {
+        var released = false;
+        for (var i = 0; i < pads.Count; i++)
+        {
+            var b = button(pads[i]);
+            if (b.isPressed)
+            {
+                return false;
+            }
+            released |= b.wasReleasedThisFrame;
+        }
+        return released;
+    }
+
+    private static bool AnyButtonPressed(IReadOnlyList<Gamepad> pads)
+    {
+        for (var i = 0; i < pads.Count; i++)
+        {
+            foreach (var control in pads[i].allControls)
+            {
+                if (control is ButtonControl b && b.wasPressedThisFrame)
+                {
+                    return true;
+                }
             }
         }
         return false;

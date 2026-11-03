@@ -164,6 +164,16 @@ edit("Assets/Scripts/ServerConfiguration/ServerConfigurationModel.cs",
     }
 """)
 
+# 90 and 120 fps in MobileUO's frame rate menu, 90 by default (the toolkit sets the panel to match)
+edit("Assets/Scripts/PreferenceEnums.cs", """        _60 = 60,
+        InGameFPS = -1""", """        _60 = 60,
+        _90 = 90,
+        _120 = 120,
+        InGameFPS = -1""")
+edit("Assets/Scripts/UserPreferences.cs",
+     "TargetFrameRate = new IntPreference(nameof(TargetFrameRate), (int) TargetFrameRates._60);",
+     "TargetFrameRate = new IntPreference(nameof(TargetFrameRate), (int) TargetFrameRates._90);")
+
 # UOAlive's current mobile package (uoalive.com/playnow.html)
 edit("Assets/Resources/SupportedServerConfigurations.asset",
      """    FileDownloadServerUrl: mobile.uoalive.com/uoalive_v1.zip

@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # Save backup: once a day, while the screen is off, every emulator's saves, memory cards
-# and save states (and OpenMW's saves) are packed into RG477M-backups/<date> on the SD card
+# and save states (and OpenMW's saves, MobileUO's profiles) are packed into RG477M-backups/<date> on the SD card
 # (internal Download when there is no card). The newest 7 are kept.
 # Off with persist.rg477m.backup=off; "rg477m backup now" runs one straight away.
 MODDIR=${0%/*}; . "$MODDIR/common.sh"
@@ -26,6 +26,12 @@ backup() {
            "$S/DraStic/backup" "$S/DraStic/savestates" "$S/Documents/Morrowind Android/saves"; do
     [ -d "$d" ] || continue
     tar -czf "$out/$(echo "${d#$S/}" | tr '/ ' '__').tar.gz" -C "$S" "${d#$S/}" 2>/dev/null && n=$((n + 1))
+  done
+  # MobileUO: each server's profiles, macros and settings (not its game files)
+  for d in "$S"/Android/data/com.mobileuo.mobileuo*/files/*/Data; do
+    [ -d "$d" ] || continue
+    rel=${d#$S/}
+    tar -czf "$out/$(echo "$rel" | tr '/ ' '__').tar.gz" -C "$S" "$rel" 2>/dev/null && n=$((n + 1))
   done
   # each emulator's own app folder
   for app in "$S"/Android/data/*; do
