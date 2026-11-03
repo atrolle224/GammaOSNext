@@ -2,9 +2,12 @@
 # Game Mode: while an emulator or game is in front, the game profile applies
 # (performance, fan, bypass charging, refresh rate); back at Daijishou or Android,
 # the settings from before come back. Off with persist.rg477m.gamemode=off.
+# apps.conf gives one app (or a pattern) its own profile: "pkg perf fan refresh", "-" = Game Mode's.
 MODDIR=${0%/*}; . "$MODDIR/common.sh"; . "$MODDIR/tk.sh"
-GAMES='com.retroarch.* org.dolphinemu.* com.armsx2.* com.rfandango.haku_x* org.ppsspp.* com.flycast.emulator* org.mupen64plusae.* com.github.stenzek.duckstation* com.dsemu.drastic* com.ast.openmw* org.opennv.* gamehub.* com.antutu.ABenchMark com.xiaoji.* com.winlator* com.nanodata.* come.nanodata.*'
+GAMES='com.retroarch.* org.dolphinemu.* com.armsx2.* com.rfandango.haku_x* org.ppsspp.* com.flycast.emulator* org.mupen64plusae.* com.github.stenzek.duckstation* com.dsemu.drastic* com.ast.openmw* org.opennv.* gamehub.* com.antutu.ABenchMark com.xiaoji.* com.winlator* com.nanodata.* come.nanodata.* *citron* *eden* *gamenative* *azahar* *lime3ds* *yabasanshiro* *shipwright* *harkinian* *starship* *spaghetti* *ghostship* *fallout* *halo* *perfect_dark* *diii4a*'
 USER_LIST=$CFG/games.conf
+APPS=$CFG/apps.conf
+[ -f "$APPS" ] || cp "$MODDIR/apps.conf" "$APPS" 2>/dev/null
 
 is_game() {
   for g in $GAMES $(cat "$USER_LIST" 2>/dev/null); do
@@ -27,6 +30,17 @@ current() {
   echo "$perf $fan $ch ${rr:-60}"
 }
 
+profile_for() {   # perf fan refresh for $1, from apps.conf or Game Mode's settings
+  pf=$(getprop persist.rg477m.gm_perf); fa=$(getprop persist.rg477m.gm_fan); hz=$(getprop persist.rg477m.gm_refresh)
+  while read -r g p f r; do
+    case "$g" in ''|\#*) continue ;; esac
+    case "$1" in $g)
+      [ "$p" = - ] || pf=$p; [ "$f" = - ] || fa=$f; [ -z "$r" ] || [ "$r" = - ] || hz=$r; break ;;
+    esac
+  done < "$APPS"
+  echo "${pf:-balanced} ${fa:-smart} ${hz:-120}"
+}
+
 apply() {   # perf fan charge refresh: only what differs is changed
   c=$(current)
   [ "$1" != "$(echo $c | cut -d' ' -f1)" ] && set_perf "$1"
@@ -46,19 +60,19 @@ while true; do
   [ "$(getprop sys.screen.state)" = off ] && continue
   pkg=$(front); [ -n "$pkg" ] || continue
   if is_game "$pkg"; then
-    if [ "$state" = menu ]; then
-      setprop persist.rg477m.gm_saved "$(current)"
+    if [ "$state" = menu ] || [ "$pkg" != "$game" ]; then
+      [ "$state" = menu ] && setprop persist.rg477m.gm_saved "$(current)"
       ch=$(getprop persist.rg477m.charge); [ "$(getprop persist.rg477m.gm_charge)" = keep ] || ch=bypass
-      apply "$(getprop persist.rg477m.gm_perf | sed 's/^$/balanced/')" \
-            "$(getprop persist.rg477m.gm_fan | sed 's/^$/smart/')" "${ch:-off}" \
-            "$(getprop persist.rg477m.gm_refresh | sed 's/^$/120/')"
-      state=game; setprop persist.rg477m.gm_active 1; log "game mode: on ($pkg)"
+      [ "$state" = game ] && ch=$(echo $(current) | cut -d' ' -f3)
+      set -- $(profile_for "$pkg")
+      apply "$1" "$2" "${ch:-off}" "$3"
+      state=game; game=$pkg; setprop persist.rg477m.gm_active 1; log "game mode: $1 $2 $3 Hz ($pkg)"
     fi
   else
     case "$pkg" in com.android.systemui|android|com.android.permissioncontroller|com.google.android.permissioncontroller|com.topjohnwu.magisk) continue ;; esac
     if [ "$state" = game ]; then
       apply $(getprop persist.rg477m.gm_saved)
-      state=menu; setprop persist.rg477m.gm_active 0; log "game mode: back to $(getprop persist.rg477m.gm_saved) ($pkg)"
+      state=menu; game=""; setprop persist.rg477m.gm_active 0; log "game mode: back to $(getprop persist.rg477m.gm_saved) ($pkg)"
     fi
   fi
 done

@@ -6,6 +6,9 @@ case "$1" in
   refresh) set_refresh "$2" ;; res) set_res "$2" ;; status|"") ;;
   gamemode) case "$2" in on|off) set_gamemode "$2" ;; perf|fan|refresh|charge) set_gm "$2" "$3" ;; *) exec $0 help ;; esac ;;
   backup) set_backup "$2" ;;
+  app) [ -n "$5" ] || exec $0 help
+       F=/data/adb/rg477m/apps.conf; grep -v "^$2 " "$F" > "$F.new"; echo "$2 $3 $4 $5" >> "$F.new"; mv "$F.new" "$F"
+       echo "$2: $3, fan $4, $5 Hz while it's open" ;;
   *) echo "usage: rg477m [status]
   fan     smart|silent|extreme|custom|gammaos
   perf    balanced|efficient|battery|normal|max|powersave
@@ -15,6 +18,7 @@ case "$1" in
   gamemode on|off  |  gamemode perf balanced|normal|max|efficient
            gamemode fan smart|silent|extreme  |  gamemode refresh 120|90|60
            gamemode charge bypass|keep
-  backup  now|on|off"; exit 1 ;;
+  backup  now|on|off
+  app     <package> <perf> <fan> <refresh>   its own Game Mode profile ("-" = Game Mode's)"; exit 1 ;;
 esac
 sleep 1; status
