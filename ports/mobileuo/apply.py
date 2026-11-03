@@ -35,7 +35,9 @@ with open(manifest, "w") as f:
     f.write("\n")
 edit("ProjectSettings/ProjectSettings.asset", "  activeInputHandler: 0\n", "  activeInputHandler: 2\n")
 
-# own app beside MobileUO
+# own app beside MobileUO; the build script takes the name and ID from appsettings.<BUILD_ENV>.json
+edit("Assets/appsettings.Staging.json", '"AndroidPackageName": "net.mandaria.mandouo"', '"AndroidPackageName": "com.mobileuo.mobileuo.rg477m"')
+edit("Assets/appsettings.Staging.json", '"ProductName": "MandoUO"', '"ProductName": "MobileUO 477M"')
 edit("ProjectSettings/ProjectSettings.asset", "  productName: MobileUO\n", "  productName: MobileUO 477M\n")
 edit("ProjectSettings/ProjectSettings.asset", "    Android: com.mobileuo.mobileuo\n", "    Android: com.mobileuo.mobileuo.rg477m\n")
 
