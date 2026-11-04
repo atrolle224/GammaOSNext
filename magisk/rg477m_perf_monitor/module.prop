@@ -1,0 +1,6 @@
+id=rg477m_perf_monitor
+name=RG477M performance monitor
+version=1
+versionCode=1
+author=atrolle224
+description=While a game is open, logs fps, frame-time hitches, CPU and GPU speed and load, throttling, temperatures, power, memory and storage reads once a second, then writes a report to Download/RG477M-perf. Action turns it on or off.
