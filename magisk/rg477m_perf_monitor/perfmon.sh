@@ -22,8 +22,13 @@ readnum() {
   echo ""
 }
 
+maxnum() { tr -c '0-9\n' ' ' | awk '{ for (i = 1; i <= NF; i++) if ($i + 0 > m) m = $i + 0 } END { if (m) print m }'; }
+
 gpu_mhz() {
-  v=$(readnum /sys/kernel/ged/hal/current_freq /sys/class/misc/mali0/device/cur_freq /sys/kernel/gpu/gpu_clock)
+  v=""
+  for f in /sys/kernel/ged/hal/current_freq /sys/class/misc/mali0/device/cur_freq /sys/kernel/gpu/gpu_clock; do
+    [ -r "$f" ] && { v=$(maxnum < "$f"); break; }
+  done
   [ -n "$v" ] || v=$(awk '/GPU.*[Ff]req/ { for (i = 1; i <= NF; i++) if ($i ~ /^[0-9]+$/ && $i > 100) { print $i; exit } }' /proc/gpufreqv2/gpufreq_status 2>/dev/null)
   [ -n "$v" ] || { echo ""; return; }
   awk -v v="$v" 'BEGIN { if (v > 1000000) v /= 1000000; else if (v > 10000) v /= 1000; printf "%d", v }'
@@ -83,7 +88,7 @@ cpu_load() {   # total load and the busiest core, since the previous call
 }
 
 disk_mb() {   # MB read from internal storage and SD card since the previous call
-  awk '$3 == "sda" { u = $6 } $3 ~ /^mmcblk[0-9]$/ { s += $6 } END { printf "%d %d", u, s }' /proc/diskstats > "$STATE/disk.now"
+  awk '$3 ~ /^sd[a-z]+$/ { u += $6 } $3 ~ /^mmcblk[0-9]+$/ { s += $6 } END { printf "%d %d", u, s }' /proc/diskstats > "$STATE/disk.now"
   if [ -f "$STATE/disk.prev" ]; then
     read pu ps < "$STATE/disk.prev"; read nu ns < "$STATE/disk.now"
     awk -v a="$pu" -v b="$nu" -v c="$ps" -v d="$ns" 'BEGIN { printf "%.1f,%.1f", (b - a) * 512 / 1048576, (d - c) * 512 / 1048576 }'
@@ -104,7 +109,13 @@ power() {
 mem_mb() { awk '/^MemAvailable:/ { printf "%d", $2 / 1024 }' /proc/meminfo; }
 
 layer_for() {
-  dumpsys SurfaceFlinger --list 2>/dev/null | grep -F "$1" | grep -v -e Background -e Bounds -e "^Task=" | grep -F "SurfaceView" | tail -1
+  l=$(dumpsys SurfaceFlinger --list 2>/dev/null | grep -F "$1" | grep -v -e Background -e Bounds -e "^Task=")
+  echo "$l" | grep -F "SurfaceView" | tail -1 | grep . || echo "$l" | tail -1
+}
+
+# frames the screen has shown since boot: the fallback when per-layer timing is unavailable
+sf_frames() {
+  service call SurfaceFlinger 1013 2>/dev/null | sed -n "s/.*Parcel(\([0-9a-fA-F]*\).*/\1/p" | head -1
 }
 
 frames() {   # new frames since $LAST_PRESENT: count, worst gap in ms, hitches; updates LAST_PRESENT
@@ -127,11 +138,15 @@ frames() {   # new frames since $LAST_PRESENT: count, worst gap in ms, hitches; 
 
 report() {   # $1 csv
   csv=$1; txt=${csv%.csv}.txt
-  awk -F, -v h="$HITCH_MS" -v pkg="$PKG" '
+  med=$(awk -F, 'NR > 1 && $2 != "" { print $2 }' "$csv" | sort -n | awk '{ a[NR] = $1 } END { if (NR) print a[int((NR + 1) / 2)] }')
+  awk -F, -v h="$HITCH_MS" -v pkg="$PKG" -v med="${med:-0}" '
     NR == 1 { next }
     $2 == "" { next }
     { n++; fps[n] = $2; sumfps += $2; if ($3 > worst) worst = $3; hit += $4
-      if ($4 > 0) { hs++; hsd += $19; hufs += $18; hbig += $10; hgpu += $16 } else { ns++; nsd += $19; nufs += $18 }
+      if ($4 == "") { pertime = 0 } else { pertime = 1 }
+      dip = (!pertime && med > 0 && $2 < 0.75 * med)
+      if (dip) dips++
+      if ($4 > 0 || dip) { hs++; hsd += $19; hufs += $18; hbig += $10; hgpu += $16 } else { ns++; nsd += $19; nufs += $18 }
       big += $10; if ($16 != "") { gpu += $16; gpun++ }
       if ($11 == 1) thr++
       if ($12 > soc) soc = $12; if ($13 > gpuc) gpuc = $13; if ($14 > batt) batt = $14
@@ -143,7 +158,10 @@ report() {   # $1 csv
       low = s[int(n * 0.05) + 1]
       printf "RG477M performance report: %s\n", pkg
       printf "Played %d s.  Average %.0f fps, low (worst 5%% of seconds) %.0f fps.\n", n, sumfps / n, low
-      printf "Hitches (frames over %d ms): %d, in %d of %d seconds. Worst frame: %d ms.\n", h, hit, hs, n, worst
+      if (dips || !hit && worst == 0)
+        printf "Frame-rate dips (seconds below 75%% of the usual %d fps): %d of %d seconds.\n", med, dips, n
+      else
+        printf "Hitches (frames over %d ms): %d, in %d of %d seconds. Worst frame: %d ms.\n", h, hit, hs, n, worst
       printf "CPU: busiest core %.0f%% on average; clocks held below maximum (throttled) %d%% of the time.\n", big / n, 100 * thr / n
       if (gpun) printf "GPU: %.0f%% busy on average.\n", gpu / gpun
       printf "Hottest: chip %d C, GPU %d C, battery %.0f C.  Power %.1f W on average.  Lowest free memory %s MB.\n", soc, gpuc, batt, pw / n, memmin
@@ -163,8 +181,8 @@ report() {   # $1 csv
         print "- The busiest CPU core was close to full: the emulator is CPU-limited. Try EE Cycle Skipping (ARMSX2) or lighter settings."; said = 1 }
       if (memmin != "" && memmin < 400) {
         print "- Memory ran low: close other apps before playing."; said = 1 }
-      if (!said && hit > 0) print "- No device limit lines up with the hitches. Hitches that fade on a second run are shaders being compiled; ones that stay are the emulator itself."
-      if (!said && hit == 0) print "- Smooth: no hitches recorded."
+      if (!said && (hit > 0 || dips > 0)) print "- No device limit lines up with the hitches. Hitches that fade on a second run are shaders being compiled; ones that stay are the emulator itself."
+      if (!said && hit == 0 && dips == 0) print "- Smooth: no hitches recorded."
     }' "$csv" > "$txt"
   [ -s "$txt" ] || rm -f "$txt"
   chown -R media_rw:media_rw "$OUT" 2>/dev/null
@@ -180,7 +198,7 @@ while [ ! -f /data/adb/rg477m/perf_off ]; do
   p=$(front)
   if [ "$p" != "$PKG" ]; then
     [ -n "$CSV" ] && report "$CSV"
-    CSV=""; PKG=$p; LAYER=""; LAST_PRESENT=0; LAYER_TRIES=0
+    CSV=""; PKG=$p; LAYER=""; LAST_PRESENT=0; LAYER_TRIES=0; SF_PREV=""
     rm -f "$STATE/stat.prev" "$STATE/disk.prev"
     case "$SKIP" in *" $p "*) p="" ;; esac
     if [ -n "$p" ]; then
@@ -196,6 +214,16 @@ while [ ! -f /data/adb/rg477m/perf_off ]; do
     if [ -n "$LAYER" ]; then
       fr=$(frames)
       LAST_PRESENT=$(cat "$STATE/last_present" 2>/dev/null || echo 0)
+    fi
+    if [ "$fr" = ",," ] || [ "${fr%%,*}" = 0 ]; then
+      c=$(sf_frames)
+      if [ -n "$c" ]; then
+        c=$(printf '%d' "0x$c" 2>/dev/null)
+        if [ -n "$SF_PREV" ] && [ -n "$c" ]; then
+          fr=$(awk -v a="$SF_PREV" -v b="$c" -v dt="$DT" 'BEGIN { if (dt <= 0) dt = 1; f = (b - a) / dt; if (f < 0) f = 0; printf "%.0f,,", f }')
+        fi
+        SF_PREV=$c
+      fi
     fi
     cf=$(cpu_freqs)
     thr=${cf##*,}
