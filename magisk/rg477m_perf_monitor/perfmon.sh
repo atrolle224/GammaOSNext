@@ -155,8 +155,7 @@ report() {   # $1 csv
   med=$(awk -F, 'NR > 1 && $2 != "" { print $2 }' "$csv" | sort -n | awk '{ a[NR] = $1 } END { if (NR) print a[int((NR + 1) / 2)] }')
   awk -F, -v h="$HITCH_MS" -v pkg="$PKG" -v med="${med:-0}" '
     NR == 1 { next }
-    $2 == "" { next }
-    { n++; fps[n] = $2; sumfps += $2; if ($3 > worst) worst = $3; hit += $4
+    { n++; fps[n] = $2 + 0; sumfps += $2; if ($3 > worst) worst = $3; hit += $4
       if ($4 == "") { pertime = 0 } else { pertime = 1 }
       dip = (!pertime && med > 0 && $2 < 0.75 * med)
       if (dip) dips++
