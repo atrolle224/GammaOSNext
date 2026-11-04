@@ -113,6 +113,20 @@ layer_for() {
   echo "$l" | grep -F "SurfaceView" | tail -1 | grep . || echo "$l" | tail -1
 }
 
+# MediaTek's frame tracker: the game's current fps, read by the column named currentFPS
+fpsgo_fps() {
+  pids=" $(pidof "$PKG" 2>/dev/null) "
+  [ "$pids" = "  " ] && return
+  for f in /sys/kernel/fpsgo/fstb/fpsgo_status /sys/kernel/debug/fpsgo/fstb/fpsgo_status /proc/fpsgo/fstb/fpsgo_status; do
+    [ -r "$f" ] || continue
+    awk -v pids="$pids" '
+      !col { for (i = 1; i <= NF; i++) if (tolower($i) ~ /^currentfps$|^cur_fps$|^curfps$/) col = i; next }
+      index(pids, " " $1 " ") || index(pids, " " $2 " ") { if ($col + 0 > best) best = $col + 0 }
+      END { if (best > 0) printf "%.0f", best }' "$f"
+    return
+  done
+}
+
 # frames the screen has shown since boot: the fallback when per-layer timing is unavailable
 sf_frames() {
   service call SurfaceFlinger 1013 2>/dev/null | sed -n "s/.*Parcel(\([0-9a-fA-F]*\).*/\1/p" | head -1
@@ -157,8 +171,10 @@ report() {   # $1 csv
       for (i = 2; i <= n; i++) { v = s[i]; j = i - 1; while (j > 0 && s[j] > v) { s[j + 1] = s[j]; j-- } s[j + 1] = v }
       low = s[int(n * 0.05) + 1]
       printf "RG477M performance report: %s\n", pkg
-      printf "Played %d s.  Average %.0f fps, low (worst 5%% of seconds) %.0f fps.\n", n, sumfps / n, low
-      if (dips || !hit && worst == 0)
+      if (sumfps == 0) printf "Played %d s.  Frame rate: not available on this device.\n", n
+      else printf "Played %d s.  Average %.0f fps, low (worst 5%% of seconds) %.0f fps.\n", n, sumfps / n, low
+      if (sumfps == 0) { }
+      else if (dips || !hit && worst == 0)
         printf "Frame-rate dips (seconds below 75%% of the usual %d fps): %d of %d seconds.\n", med, dips, n
       else
         printf "Hitches (frames over %d ms): %d, in %d of %d seconds. Worst frame: %d ms.\n", h, hit, hs, n, worst
@@ -173,16 +189,19 @@ report() {   # $1 csv
         print "- Hitches line up with reads from the SD card: the game is streaming from it. Move the game to internal storage, and use an uncompressed image (.iso, XISO) rather than .chd or .cso."; said = 1 }
       if (hs && (hufs / hs > 5 && hufs / hs > 2 * (ns ? nufs / ns : 0) + 1)) {
         print "- Hitches line up with heavy reads from internal storage: loading or streaming. Fast CDVD (ARMSX2) can help."; said = 1 }
-      if (thr / n > 0.2 || soc >= 88) {
-        print "- The chip got hot and slowed down (thermal throttling). Use the extreme fan profile for this app, play plugged out of bypass charging, or lower the resolution."; said = 1 }
+      if (thr / n > 0.2) {
+        print "- The chip got hot and slowed down (thermal throttling) for " int(100 * thr / n) "% of the time. Use the extreme fan profile for this app, or lower the resolution."; said = 1 }
+      else if (soc >= 90)
+        print "- The chip peaked at " soc " C but kept full speed: heat is not what limits this game."
       if (gpun && gpu / gpun >= 90) {
         print "- The GPU was close to full: lower the internal resolution or turn off heavy effects."; said = 1 }
       if (big / n >= 90) {
         print "- The busiest CPU core was close to full: the emulator is CPU-limited. Try EE Cycle Skipping (ARMSX2) or lighter settings."; said = 1 }
       if (memmin != "" && memmin < 400) {
         print "- Memory ran low: close other apps before playing."; said = 1 }
-      if (!said && (hit > 0 || dips > 0)) print "- No device limit lines up with the hitches. Hitches that fade on a second run are shaders being compiled; ones that stay are the emulator itself."
-      if (!said && hit == 0 && dips == 0) print "- Smooth: no hitches recorded."
+      if (!said && sumfps == 0) print "- Nothing on the device was maxed out: no throttling, the GPU and CPU had headroom, and storage was quiet. Stutter here comes from the emulator (shader compiling, frame pacing or its own timing), so its settings are where to look."
+      if (!said && sumfps > 0 && (hit > 0 || dips > 0)) print "- No device limit lines up with the hitches. Hitches that fade on a second run are shaders being compiled; ones that stay are the emulator itself."
+      if (!said && sumfps > 0 && hit == 0 && dips == 0) print "- Smooth: no hitches recorded."
     }' "$csv" > "$txt"
   [ -s "$txt" ] || rm -f "$txt"
   chown -R media_rw:media_rw "$OUT" 2>/dev/null
@@ -216,11 +235,16 @@ while [ ! -f /data/adb/rg477m/perf_off ]; do
       LAST_PRESENT=$(cat "$STATE/last_present" 2>/dev/null || echo 0)
     fi
     if [ "$fr" = ",," ] || [ "${fr%%,*}" = 0 ]; then
+      g=$(fpsgo_fps)
+      [ -n "$g" ] && fr="$g,,"
+    fi
+    if [ "$fr" = ",," ] || [ "${fr%%,*}" = 0 ]; then
+      fr=",,"
       c=$(sf_frames)
       if [ -n "$c" ]; then
         c=$(printf '%d' "0x$c" 2>/dev/null)
         if [ -n "$SF_PREV" ] && [ -n "$c" ]; then
-          fr=$(awk -v a="$SF_PREV" -v b="$c" -v dt="$DT" 'BEGIN { if (dt <= 0) dt = 1; f = (b - a) / dt; if (f < 0) f = 0; printf "%.0f,,", f }')
+          fr=$(awk -v a="$SF_PREV" -v b="$c" -v dt="$DT" 'BEGIN { if (dt <= 0) dt = 1; f = (b - a) / dt; if (f <= 0) printf ",,"; else printf "%.0f,,", f }')
         fi
         SF_PREV=$c
       fi
