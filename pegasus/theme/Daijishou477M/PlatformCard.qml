@@ -52,18 +52,18 @@ Item {
 
         // a few icons from the collection, for the Apps card
         Grid {
-            visible: card.previews.length > 0
+            visible: card.previews.length > 0 && !wallpaper.visible
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
-            anchors.topMargin: vpx(34)
-            columns: 3
+            anchors.topMargin: vpx(30)
+            columns: 5
             spacing: vpx(14)
 
             Repeater {
                 model: card.previews
 
                 Image {
-                    width: vpx(62)
+                    width: vpx(54)
                     height: width
                     source: modelData
                     sourceSize.width: 128
@@ -89,7 +89,7 @@ Item {
         Text {
             visible: !logo.visible && !wallpaper.visible
             anchors.centerIn: parent
-            anchors.verticalCenterOffset: card.previews.length > 0 ? parent.height * 0.2 : 0
+            anchors.verticalCenterOffset: card.previews.length > 0 ? parent.height * 0.25 : 0
             width: parent.width - vpx(32)
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap

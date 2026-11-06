@@ -105,7 +105,7 @@ FocusScope {
     function appIcons(collectionIndex) {
         var list = [];
         var g = api.collections.get(collectionIndex).games;
-        for (var i = 0; i < g.count && list.length < 9; i++) {
+        for (var i = 0; i < g.count && list.length < 10; i++) {
             var icon = g.get(i).assets.boxFront;
             if (icon)
                 list.push(icon);
@@ -261,7 +261,7 @@ FocusScope {
             spacing: vpx(4)
             keyNavigationWraps: true
             highlightRangeMode: ListView.StrictlyEnforceRange
-            readonly property real currentWidth: currentItem ? currentItem.width : vpx(270)
+            readonly property real currentWidth: currentItem ? currentItem.width : vpx(400)
             preferredHighlightBegin: (width - currentWidth) / 2
             preferredHighlightEnd: preferredHighlightBegin + currentWidth
             highlightMoveDuration: 180
@@ -271,7 +271,7 @@ FocusScope {
             delegate: Item {
                 readonly property bool isRa: platforms[index].kind === "ra"
                 readonly property bool current: ListView.isCurrentItem
-                width: isRa ? vpx(480) : vpx(270)
+                width: isRa ? vpx(480) : vpx(400)
                 height: carousel.height
 
                 RaCard {
@@ -284,8 +284,9 @@ FocusScope {
                 PlatformCard {
                     visible: !isRa
                     anchors.centerIn: parent
-                    width: vpx(270)
-                    height: vpx(380)
+                    // 4:3, the shape of the wallpapers on this screen
+                    width: vpx(400)
+                    height: vpx(300)
                     shortName: platforms[index].shortName
                     name: platforms[index].name
                     count: platforms[index].count
