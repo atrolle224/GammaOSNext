@@ -20,11 +20,6 @@ file: ports/Perfect Dark.port
 description: The Perfect Dark PC port; it needs your own N64 ROM.
 launch: am start -p com.perfectdark.port.rg477m -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
 
-game: The Elder Scrolls III: Morrowind
-file: ports/The Elder Scrolls III Morrowind.port
-description: OpenMW 477M, with the Morrowind data files from your Steam/GOG copy.
-launch: am start -p com.ast.openmw.rg477m -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
-
 game: Ultima Online (UOAlive)
 file: ports/Ultima Online UOAlive.port
 description: MobileUO 477M set up for UOAlive, with controller play.

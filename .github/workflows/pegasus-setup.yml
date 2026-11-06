@@ -51,7 +51,6 @@ jobs:
           done
           for g in "Advance Wars" "Metroid Fusion" "Pokemon Emerald"; do touch "$lib/gba/$g.gba"; done
           for g in "Crazy Taxi" "Shadow of the Colossus"; do touch "$lib/ps2/$g.iso"; done
-          touch "$lib/psvita/PCSE00120.psvita"
           cat >> "$lib/snes.metadata.pegasus.txt" <<'EOF'
 
           game: Super Metroid
@@ -124,17 +123,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Pegasus and Vita3K for Android
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Pegasus for Android
         run: |
           set -e
           mkdir apks
           git clone -q --depth 1 -b continuous-android64 https://github.com/mmatyas/pegasus-deploy-staging peg
           cp peg/pegasus-fe_*_android64.apk apks/Pegasus.apk
-          gh release download -R Vita3K/Vita3K-Android -p '*.apk' -D vita
-          ls vita
-          cp "$(ls vita/*.apk | head -1)" apks/Vita3K.apk
 
       - name: The 477M builds
         env:

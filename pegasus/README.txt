@@ -5,7 +5,7 @@ A Daijishou-style Pegasus library with every emulator and port already wired up.
 No root needed.
 
 1. INSTALL THE APPS
-   Install Pegasus.apk and Vita3K.apk from the APKs folder, then the emulator
+   Install Pegasus.apk from the APKs folder, then the emulator
    APKs you use (the list below says which app runs which system).
 
 2. COPY THE FOLDERS
@@ -17,13 +17,10 @@ No root needed.
 3. PUT YOUR GAMES IN
    Each system has its own folder in ROMs on the SD card:
      gb gbc gba nes snes n64 nds gc wii master genesis gamegear segacd
-     saturn dreamcast ngpc psx ps2 psp psvita xbox
+     saturn dreamcast ngpc psx ps2 psp xbox
    BIOS files for RetroArch go in /RetroArch/system on internal storage
    (Sega CD: bios_CD_U.bin, bios_CD_E.bin or bios_CD_J.bin; PlayStation:
    scph5501.bin). The other emulators ask for theirs on first start.
-
-   PS Vita: install the game in Vita3K first, then make an empty file in
-   ROMs/psvita named after the game's title ID, e.g. PCSE00120.psvita.
 
 4. FIRST START OF PEGASUS
    Open Pegasus and allow file access. Press Start > Settings >
@@ -63,10 +60,10 @@ WHICH APP RUNS WHAT
    Nintendo 64: Mupen64Plus FZ 477M         Nintendo DS: melonDS 477M
    GameCube, Wii: Dolphin 477M              Dreamcast: Flycast 477M
    PlayStation 2: ARMSX2 Net                PSP: PPSSPP 477M
-   PS Vita: Vita3K                          Xbox: hakuX
+   Xbox: hakuX
    Saturn: Saturn.emu (your own copy)
-   Ports: Fallout CE, Fallout 2 CE, Perfect Dark, OpenMW 477M,
-     MobileUO 477M (UOAlive), Old School RuneScape (from the Play Store)
+   Ports: Fallout CE, Fallout 2 CE, Perfect Dark, MobileUO 477M (UOAlive),
+     Old School RuneScape (from the Play Store)
 
    To use a different app for a system (the official Dolphin, the ARMSX2 DNS
    build, Yaba Sanshiro 2...), open that system's file in ROMs on the SD card

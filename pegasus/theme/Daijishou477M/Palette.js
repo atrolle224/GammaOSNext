@@ -40,7 +40,7 @@ var platform = {
 // carousel order, the way Daijishou groups them; anything else comes after, by name
 var order = ["gb", "gbc", "gba", "nes", "snes", "n64", "nds", "gc", "wii",
              "master", "genesis", "megadrive", "gamegear", "segacd", "saturn", "dreamcast",
-             "ngpc", "psx", "ps2", "psp", "psvita", "xbox", "ports"];
+             "ngpc", "psx", "ps2", "psp", "xbox", "ports"];
 
 function rank(shortName) {
     var i = order.indexOf(shortName);
