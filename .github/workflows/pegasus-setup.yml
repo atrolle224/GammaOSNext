@@ -64,7 +64,8 @@ jobs:
           # a stand-in for Android Apps, which only exists on Android
           mkdir -p $lib/android
           {
-            echo "collection: Android"; echo "shortname: Android"; echo "extensions: app"; echo
+            echo "collection: Android"; echo "shortname: Android"; echo "extensions: app"
+            echo "ignore-regex: ^(?!.*/android/)"; echo
             for a in "RetroArch 477M:#e0453a" "Dolphin 477M:#3a6ee0" "ARMSX2 Net:#2f62c9" "hakuX:#2e8b2e" \
                      "PPSSPP 477M:#4a8fd4" "Flycast 477M:#e07a2e" "melonDS 477M:#8f8f9a" "Fallout CE:#c9a227" \
                      "Perfect Dark:#b8282e" "MobileUO 477M:#7a5230" "Chrome:#4285f4" "Settings:#5f6368"; do
@@ -72,9 +73,9 @@ jobs:
               touch "$lib/android/$n.app"
               convert -size 192x192 xc:none -fill "$c" -draw "roundrectangle 0,0 191,191 44,44" \
                 -gravity center -pointsize 72 -fill white -annotate 0 "${n:0:1}" "$lib/android/$n.png"
-              echo "game: $n"; echo "file: $n.app"; echo "assets.boxFront: $n.png"; echo
+              echo "game: $n"; echo "file: android/$n.app"; echo "assets.boxFront: android/$n.png"; echo
             done
-          } > $lib/android/metadata.pegasus.txt
+          } > $lib/android.metadata.pegasus.txt
           echo "CFG=$cfg" >> $GITHUB_ENV
           python3 pegasus/test/ra_mock.py $RUNNER_TEMP/ra
           (cd $RUNNER_TEMP/ra && python3 -m http.server 8765 --bind 127.0.0.1 > /dev/null 2>&1 &)
