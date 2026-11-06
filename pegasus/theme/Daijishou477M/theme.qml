@@ -208,25 +208,43 @@ FocusScope {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             anchors.verticalCenterOffset: -vpx(30)
-            height: vpx(380)
+            height: vpx(430)
 
             orientation: ListView.Horizontal
             model: platforms.length
             spacing: vpx(4)
             keyNavigationWraps: true
             highlightRangeMode: ListView.StrictlyEnforceRange
-            preferredHighlightBegin: (width - vpx(270)) / 2
-            preferredHighlightEnd: preferredHighlightBegin + vpx(270)
+            readonly property real currentWidth: currentItem ? currentItem.width : vpx(270)
+            preferredHighlightBegin: (width - currentWidth) / 2
+            preferredHighlightEnd: preferredHighlightBegin + currentWidth
             highlightMoveDuration: 180
             snapMode: ListView.SnapToItem
 
-            delegate: PlatformCard {
-                width: vpx(270)
-                height: vpx(380)
-                shortName: platforms[index].shortName
-                name: platforms[index].name
-                count: platforms[index].count
-                selected: ListView.isCurrentItem
+            // RetroAchievements is a wide live card; the platforms are cards of the same size
+            delegate: Item {
+                readonly property bool isRa: platforms[index].kind === "ra"
+                readonly property bool current: ListView.isCurrentItem
+                width: isRa ? vpx(480) : vpx(270)
+                height: carousel.height
+
+                RaCard {
+                    visible: isRa
+                    anchors.fill: parent
+                    ra: raData
+                    selected: current
+                }
+
+                PlatformCard {
+                    visible: !isRa
+                    anchors.centerIn: parent
+                    width: vpx(270)
+                    height: vpx(380)
+                    shortName: platforms[index].shortName
+                    name: platforms[index].name
+                    count: platforms[index].count
+                    selected: current
+                }
 
                 MouseArea {
                     anchors.fill: parent
@@ -302,8 +320,13 @@ FocusScope {
 
     // ---------------------------------------------------------------- RetroAchievements
 
+    RaData {
+        id: raData
+    }
+
     RetroAchievementsPage {
         id: raPage
+        ra: raData
         anchors.top: topBar.bottom
         anchors.bottom: bottomBar.top
         anchors.left: parent.left

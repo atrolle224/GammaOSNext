@@ -95,6 +95,7 @@ jobs:
           run ra-setup '{"platform":"retroachievements"}' Return
           ra='"ra_user":"Andre477M","ra_key":"test","ra_api":"http://127.0.0.1:8765/API/","ra_media":"http://127.0.0.1:8765"'
           run ra-home "{\"platform\":\"retroachievements\",$ra}"
+          run ra-home-next "{\"platform\":\"retroachievements\",$ra}" Right
           run ra "{\"platform\":\"retroachievements\",$ra}" Return
           run ra-back "{\"platform\":\"retroachievements\",$ra}" Return Escape
           cat shots/home.log

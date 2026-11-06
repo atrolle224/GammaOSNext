@@ -38,10 +38,12 @@ No root needed.
    which keeps your login, saves (/RetroArch/saves) and states together.
 
 RETROACHIEVEMENTS PAGE
-   The first card on the carousel. Open it once and enter your RetroAchievements
-   user name and your Web API key (retroachievements.org > Settings > Keys; it is
-   not your password). It shows your points, rank, the game you played last with
-   its progress, and your recent unlocks, and refreshes every 5 minutes.
+   The first card on the carousel is a live RetroAchievements card: your points,
+   rank, the game you played last with its progress and your latest unlocks,
+   updated when Pegasus starts, every 5 minutes and whenever you come back from
+   a game. Open it once (A) to enter your RetroAchievements user name and your
+   Web API key (retroachievements.org > Settings > Keys; it is not your
+   password). Opening it later shows the full page with more unlocks:
    X refreshes now, Y changes the account. It needs Wi-Fi.
 
 CONTROLS IN PEGASUS

@@ -9,31 +9,19 @@ FocusScope {
 
     signal back()
 
-    readonly property string apiBase: api.memory.get("ra_api") || "https://retroachievements.org/API/"
-    readonly property string mediaBase: api.memory.get("ra_media") || "https://media.retroachievements.org"
-    readonly property bool configured: !!api.memory.get("ra_user") && !!api.memory.get("ra_key")
-    property bool editing: !configured
-    property var summary: null
-    property string error: ""
-    property bool loading: false
-    property date updated
-
-    function media(path) {
-        if (!path || path === "null")
-            return "";
-        return path.indexOf("http") === 0 ? path : mediaBase + path;
-    }
+    property var ra
+    property bool editing: !ra.configured
 
     function open() {
-        editing = !configured;
+        editing = !ra.configured;
         if (editing) {
             userField.text = api.memory.get("ra_user") || "";
             keyField.text = "";
             userField.forceActiveFocus();
         } else {
             dashboard.forceActiveFocus();
-            if (!summary || (new Date() - updated) > 60000)
-                refresh();
+            if (!ra.summary || (new Date() - ra.updated) > 60000)
+                ra.refresh();
         }
     }
 
@@ -42,102 +30,10 @@ FocusScope {
         var k = keyField.text.trim();
         if (!u || (!k && !api.memory.get("ra_key")))
             return;
-        api.memory.set("ra_user", u);
-        if (k)
-            api.memory.set("ra_key", k);
         Qt.inputMethod.hide();
-        summary = null;
         editing = false;
         dashboard.forceActiveFocus();
-        refresh();
-    }
-
-    function refresh() {
-        if (!configured || loading)
-            return;
-        loading = true;
-        error = "";
-        var xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState !== XMLHttpRequest.DONE)
-                return;
-            loading = false;
-            if (xhr.status === 401 || xhr.status === 403) {
-                error = "RetroAchievements refused the Web API key. Press Y to enter it again.";
-                return;
-            }
-            if (xhr.status !== 200) {
-                error = xhr.status === 0 ? "No connection to RetroAchievements." : "RetroAchievements answered " + xhr.status + ".";
-                return;
-            }
-            try {
-                summary = parse(JSON.parse(xhr.responseText));
-                updated = new Date();
-            } catch (e) {
-                error = "RetroAchievements sent something unexpected. Check the user name and key (Y).";
-            }
-        };
-        xhr.open("GET", apiBase + "API_GetUserSummary.php?u=" + encodeURIComponent(api.memory.get("ra_user"))
-                 + "&y=" + encodeURIComponent(api.memory.get("ra_key")) + "&g=3&a=12");
-        xhr.setRequestHeader("User-Agent", "Pegasus-Daijishou477M/1.0");
-        xhr.send();
-    }
-
-    function parse(o) {
-        if (!o || !o.User)
-            throw "no user";
-        var s = {
-            user: o.User,
-            avatar: media(o.UserPic),
-            hardcore: o.TotalPoints || 0,
-            softcore: o.TotalSoftcorePoints || 0,
-            truePoints: o.TotalTruePoints || 0,
-            rank: o.Rank,
-            ranked: o.TotalRanked || 0,
-            motto: o.Motto || "",
-            presence: o.RichPresenceMsg || "",
-            game: null,
-            recent: []
-        };
-        var last = o.LastGame || (o.RecentlyPlayed && o.RecentlyPlayed[0]) || null;
-        if (last) {
-            var id = String(last.ID || last.GameID || o.LastGameID || "");
-            var aw = (o.Awarded && o.Awarded[id]) || {};
-            s.game = {
-                title: last.Title || "",
-                console: last.ConsoleName || "",
-                icon: media(last.ImageIcon),
-                boxArt: media(last.ImageBoxArt || last.ImageTitle),
-                total: aw.NumPossibleAchievements || 0,
-                got: aw.NumAchieved || 0,
-                gotHardcore: aw.NumAchievedHardcore || 0
-            };
-        }
-        var byGame = o.RecentAchievements;
-        if (byGame && !Array.isArray(byGame)) {
-            for (var g in byGame)
-                for (var a in byGame[g]) {
-                    var j = byGame[g][a];
-                    s.recent.push({
-                        title: j.Title || "",
-                        description: j.Description || "",
-                        game: j.GameTitle || "",
-                        points: j.Points || 0,
-                        hardcore: Number(j.HardcoreAchieved) === 1,
-                        date: j.DateAwarded || "",
-                        badge: j.BadgeName ? mediaBase + "/Badge/" + j.BadgeName + ".png" : ""
-                    });
-                }
-        }
-        s.recent.sort(function (l, r) { return l.date < r.date ? 1 : l.date > r.date ? -1 : 0; });
-        return s;
-    }
-
-    Timer {
-        interval: 5 * 60 * 1000
-        running: page.visible && !page.editing
-        repeat: true
-        onTriggered: page.refresh()
+        ra.setAccount(u, k);
     }
 
     // ---------------------------------------------------------------- sign-in
@@ -225,7 +121,7 @@ FocusScope {
             if (api.keys.isCancel(event) && !event.isAutoRepeat) {
                 event.accepted = true;
                 Qt.inputMethod.hide();
-                if (page.configured) {
+                if (ra.configured) {
                     page.editing = false;
                     dashboard.forceActiveFocus();
                 } else {
@@ -245,7 +141,7 @@ FocusScope {
         anchors.topMargin: vpx(8)
         visible: !page.editing
 
-        readonly property var s: page.summary
+        readonly property var s: ra.summary
 
         Keys.onPressed: {
             if (event.isAutoRepeat)
@@ -255,7 +151,7 @@ FocusScope {
                 page.back();
             } else if (api.keys.isDetails(event)) {
                 event.accepted = true;
-                page.refresh();
+                ra.refresh();
             } else if (api.keys.isFilters(event)) {
                 event.accepted = true;
                 page.editing = true;
@@ -271,8 +167,8 @@ FocusScope {
             width: parent.width * 0.7
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap
-            text: page.error || "Loading RetroAchievements…"
-            color: page.error ? P.accent : P.dim
+            text: ra.error || "Loading RetroAchievements…"
+            color: ra.error ? P.accent : P.dim
             font.family: global.fonts.sans
             font.pixelSize: vpx(20)
         }
@@ -341,10 +237,10 @@ FocusScope {
                     font.pixelSize: vpx(16)
                 }
                 Text {
-                    text: page.loading ? "Updating…"
-                          : page.error ? page.error
-                          : "Updated " + Qt.formatTime(page.updated, "HH:mm")
-                    color: page.error ? "#ffd0d6" : P.text
+                    text: ra.loading ? "Updating…"
+                          : ra.error ? ra.error
+                          : "Updated " + Qt.formatTime(ra.updated, "HH:mm")
+                    color: ra.error ? "#ffd0d6" : P.text
                     opacity: 0.7
                     font.family: global.fonts.sans
                     font.pixelSize: vpx(13)
