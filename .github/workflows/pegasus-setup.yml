@@ -8,7 +8,7 @@ on:
       - '.github/workflows/pegasus-setup.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   # Runs the theme in the real Pegasus (its Linux build) at 1280x960 and keeps screenshots.
@@ -24,10 +24,10 @@ jobs:
           sudo apt-get install -y -q xvfb imagemagick xdotool libgl1-mesa-dri libegl1 libgl1 \
             libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
             libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxcb-xfixes0 libxcb-sync1 libxkbcommon-x11-0 \
-            libsdl2-2.0-0 libpulse0 libgstreamer-plugins-base1.0-0 libgstreamer1.0-0
+            libsdl2-2.0-0 libpulse0 libgstreamer-plugins-base1.0-0 libgstreamer1.0-0 libgstreamer-gl1.0-0
           git clone -q --depth 1 -b continuous-x11-static https://github.com/mmatyas/pegasus-deploy-staging peg
           unzip -q peg/pegasus-fe_*_x11-static.zip -d peg/bin
-          ldd peg/bin/pegasus-fe | grep "not found" || true
+          if ldd peg/bin/pegasus-fe | grep "not found"; then exit 1; fi
 
       - name: Test library
         run: |
@@ -91,11 +91,15 @@ jobs:
             echo "::error::QML errors in the theme"; exit 1
           fi
 
-      - uses: actions/upload-artifact@v4
+      - name: Screenshots to a draft release
         if: always()
-        with:
-          name: pegasus-theme-screenshots
-          path: shots
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -d shots ] || exit 0
+          tag=pegasus-theme-test-${{ github.run_id }}
+          gh release create "$tag" --draft --target "$GITHUB_SHA" --title "Pegasus theme test ${{ github.run_id }}" \
+            --notes "Screenshots and logs from the theme test." shots/*
 
   bundle:
     runs-on: ubuntu-24.04
@@ -114,10 +118,37 @@ jobs:
           ls vita
           cp "$(ls vita/*.apk | head -1)" apks/Vita3K.apk
 
-      - name: Setup folder
-        run: python3 pegasus/bundle.py "RG477M Pegasus setup" apks/*.apk
+      - name: The 477M builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          grep -v '^#' pegasus/apks.list | while read -r repo branch art apk; do
+            [ -n "$repo" ] || continue
+            id=$(gh api "repos/atrolle224/$repo/actions/artifacts?name=$art&per_page=50" --jq \
+              "[.artifacts[] | select(.expired == false and .workflow_run.head_branch == \"$branch\")][0].id // empty")
+            if [ -z "$id" ]; then echo "::warning::$repo $branch: no $art"; continue; fi
+            rm -rf dl && mkdir dl
+            gh api "repos/atrolle224/$repo/actions/artifacts/$id/zip" > dl/a.zip
+            unzip -q dl/a.zip -d dl
+            f=$(find dl -name '*.apk' | head -1)
+            if [ -z "$f" ]; then echo "::warning::$repo $art: no APK inside"; continue; fi
+            cp "$f" "apks/$apk"
+            echo "$apk  <- $repo $branch artifact $id"
+          done
+          ls -la apks
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: rg477m-pegasus-setup
-          path: RG477M Pegasus setup
+      - name: Setup zip
+        run: |
+          python3 pegasus/bundle.py "RG477M Pegasus setup" apks/*.apk
+          zip -q -r -X RG477M-Pegasus-setup.zip "RG477M Pegasus setup"
+          ls -la RG477M-Pegasus-setup.zip
+
+      # a draft release: only the owner sees it, and it doesn't expire like artifacts do
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=pegasus-setup-$(date -u +%Y%m%d-%H%M)
+          gh release create "$tag" --draft --target "$GITHUB_SHA" --title "RG477M Pegasus setup $(date -u +%Y-%m-%d)" \
+            --notes "Copy the zip to the RG477M and follow README.txt inside." RG477M-Pegasus-setup.zip
