@@ -9,6 +9,7 @@ var accent = "#ff4f6d";
 
 // a colour per platform for its card when no wallpaper is installed
 var platform = {
+    "retroachievements": ["#c9921a", "#4a2f06"],
     "recent": ["#3b4252", "#1c2029"],
     "favorites": ["#ff4f6d", "#7a1c33"],
     "gb": ["#8bac0f", "#2f4a10"],

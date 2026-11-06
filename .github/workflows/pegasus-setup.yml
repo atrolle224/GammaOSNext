@@ -63,6 +63,8 @@ jobs:
           description: Samus Aran returns to planet Zebes to recover the stolen Metroid larva. Explore a vast interconnected world, find new abilities, and face Mother Brain once more.
           EOF
           echo "CFG=$cfg" >> $GITHUB_ENV
+          python3 pegasus/test/ra_mock.py $RUNNER_TEMP/ra
+          (cd $RUNNER_TEMP/ra && python3 -m http.server 8765 --bind 127.0.0.1 > /dev/null 2>&1 &)
 
       - name: Screenshots
         run: |
@@ -91,6 +93,11 @@ jobs:
           run list-favorite '{"platform":"snes","inList":true,"game:snes":5}' i Down
           run favorite-then-home '{"platform":"snes","inList":true,"game:snes":2}' i Escape
           run ports '{"platform":"ports","inList":true}'
+          run ra-setup '{"platform":"retroachievements"}' Return
+          ra='"ra_user":"Andre477M","ra_key":"test","ra_api":"http://127.0.0.1:8765/API/","ra_media":"http://127.0.0.1:8765"'
+          run ra-home "{\"platform\":\"retroachievements\",$ra}"
+          run ra "{\"platform\":\"retroachievements\",$ra}" Return
+          run ra-back "{\"platform\":\"retroachievements\",$ra}" Return Escape
           cat shots/home.log
           if grep -h "\.qml:[0-9]" shots/*.log | grep -v "Cannot open: file:.*/assets/"; then
             echo "::error::QML errors in the theme"; exit 1

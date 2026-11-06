@@ -40,6 +40,13 @@ No root needed.
    Always start RetroArch games from Pegasus: they use /RetroArch/retroarch.cfg,
    which keeps your login, saves (/RetroArch/saves) and states together.
 
+RETROACHIEVEMENTS PAGE
+   The first card on the carousel. Open it once and enter your RetroAchievements
+   user name and your Web API key (retroachievements.org > Settings > Keys; it is
+   not your password). It shows your points, rank, the game you played last with
+   its progress, and your recent unlocks, and refreshes every 5 minutes.
+   X refreshes now, Y changes the account. It needs Wi-Fi.
+
 CONTROLS IN PEGASUS
    D-pad / stick   move            A      open / play
    B               back            X      favourite

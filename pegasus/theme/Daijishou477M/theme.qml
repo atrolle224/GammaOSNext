@@ -11,9 +11,9 @@ import "Palette.js" as P
 FocusScope {
     id: root
 
-    // Home lists Recently Played and Favorites first, when they have games, then every collection.
+    // Home lists RetroAchievements, then Recently Played and Favorites when they have games, then every collection.
     readonly property var platforms: {
-        var list = [];
+        var list = [{ kind: "ra", shortName: "retroachievements", name: "RetroAchievements", count: -1 }];
         if (recentGames.count > 0)
             list.push({ kind: "recent", shortName: "recent", name: "Recently Played", count: recentGames.count });
         if (favoriteGames.count > 0)
@@ -51,6 +51,8 @@ FocusScope {
             carousel.currentIndex = i;
     }
     property bool inList: false
+    property bool inRa: false
+    readonly property bool away: inList || inRa
     property int sortMode: 0  // 0 by title, 1 by last played
 
     readonly property var currentGame: gameAt(gameList.currentIndex)
@@ -62,6 +64,11 @@ FocusScope {
     }
 
     function openList() {
+        if (platform && platform.kind === "ra") {
+            inRa = true;
+            raPage.open();
+            return;
+        }
         if (!platform || platform.count === 0)
             return;
         inList = true;
@@ -180,9 +187,9 @@ FocusScope {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        title: inList && platform ? platform.name : "Library"
-        subtitle: inList ? games.count + (games.count === 1 ? " game" : " games")
-                : (platforms.length + " platforms")
+        title: inRa ? "RetroAchievements" : inList && platform ? platform.name : "Library"
+        subtitle: inRa ? "" : inList ? games.count + (games.count === 1 ? " game" : " games")
+                : (platforms.length - 1 + " platforms")
     }
 
     // ---------------------------------------------------------------- home: platform carousel
@@ -191,12 +198,12 @@ FocusScope {
         id: home
         anchors.fill: parent
         visible: opacity > 0
-        opacity: inList ? 0 : 1
+        opacity: away ? 0 : 1
         Behavior on opacity { NumberAnimation { duration: 160 } }
 
         ListView {
             id: carousel
-            focus: !inList
+            focus: !away
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
@@ -279,8 +286,10 @@ FocusScope {
         }
 
         Text {
-            visible: platforms.length === 0
-            anchors.centerIn: parent
+            visible: api.allGames.count === 0
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: vpx(80)
+            anchors.horizontalCenter: parent.horizontalCenter
             width: parent.width * 0.7
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap
@@ -288,6 +297,23 @@ FocusScope {
             color: P.dim
             font.family: global.fonts.sans
             font.pixelSize: vpx(20)
+        }
+    }
+
+    // ---------------------------------------------------------------- RetroAchievements
+
+    RetroAchievementsPage {
+        id: raPage
+        anchors.top: topBar.bottom
+        anchors.bottom: bottomBar.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        visible: opacity > 0
+        opacity: inRa ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 160 } }
+        onBack: {
+            inRa = false;
+            carousel.forceActiveFocus();
         }
     }
 
@@ -543,11 +569,13 @@ FocusScope {
             anchors.verticalCenter: parent.verticalCenter
             spacing: vpx(22)
 
-            Hint { button: "L1 R1"; label: inList ? "Letter" : "Scroll" }
+            Hint { visible: !inRa; button: "L1 R1"; label: inList ? "Letter" : "Scroll" }
             Hint { visible: inList; button: "Y"; label: sortMode === 0 ? "Sort: A-Z" : "Sort: Recent" }
             Hint { visible: inList; button: "X"; label: currentGame && currentGame.favorite ? "Unfavorite" : "Favorite" }
-            Hint { visible: inList; button: "B"; label: "Back" }
-            Hint { button: "A"; label: inList ? "Play" : "Open"; face: P.accent }
+            Hint { visible: inRa && !raPage.editing; button: "Y"; label: "Account" }
+            Hint { visible: inRa && !raPage.editing; button: "X"; label: "Refresh" }
+            Hint { visible: away; button: "B"; label: "Back" }
+            Hint { visible: !inRa || raPage.editing; button: "A"; label: inRa ? "Type" : inList ? "Play" : "Open"; face: P.accent }
         }
 
         Hint {
@@ -560,7 +588,9 @@ FocusScope {
     }
 
     Component.onCompleted: {
-        var start = Math.max(0, indexOfPlatform(api.memory.get("platform")));
+        var start = indexOfPlatform(api.memory.get("platform"));
+        if (start < 0)
+            start = platforms.length > 1 ? 1 : 0;
         platformShort = platforms[start] ? platforms[start].shortName : "";
         carousel.currentIndex = start;
         carousel.positionViewAtIndex(start, ListView.Center);

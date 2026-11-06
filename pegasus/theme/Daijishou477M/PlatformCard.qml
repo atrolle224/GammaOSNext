@@ -78,7 +78,7 @@ Item {
             anchors.left: parent.left
             anchors.bottom: parent.bottom
             anchors.margins: vpx(18)
-            text: card.count + (card.count === 1 ? " game" : " games")
+            text: card.count < 0 ? "Your profile" : card.count + (card.count === 1 ? " game" : " games")
             color: P.text
             font.family: global.fonts.sans
             font.pixelSize: vpx(16)
