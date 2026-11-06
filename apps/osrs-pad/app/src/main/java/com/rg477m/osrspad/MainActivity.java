@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.TypedValue;
+import android.view.InputDevice;
+import android.view.KeyEvent;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
@@ -21,6 +23,7 @@ public class MainActivity extends Activity {
     static final String KEY_SPEED = "speed";
 
     private TextView status;
+    private TextView tester;
 
     static String controls() {
         return "OSRS PAD 477M CONTROLS\n\n"
@@ -111,6 +114,12 @@ public class MainActivity extends Activity {
         });
         box.addView(speed);
 
+        tester = new TextView(this);
+        tester.setText("Controller test: press a button on the controller to see its name and code here.");
+        tester.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        tester.setPadding(0, pad, 0, 0);
+        box.addView(tester);
+
         TextView controls = new TextView(this);
         controls.setText(controls());
         controls.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
@@ -120,6 +129,20 @@ public class MainActivity extends Activity {
         ScrollView scroll = new ScrollView(this);
         scroll.addView(box);
         setContentView(scroll);
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent e) {
+        if (e.getDevice() != null && (KeyEvent.isGamepadButton(e.getKeyCode())
+                || (e.getSource() & InputDevice.SOURCE_DPAD) == InputDevice.SOURCE_DPAD)) {
+            if (e.getAction() == KeyEvent.ACTION_DOWN) {
+                tester.setText("Controller test\n" + e.getDevice().getName() + "  (vendor "
+                        + String.format("%04x", e.getDevice().getVendorId()) + ", product "
+                        + String.format("%04x", e.getDevice().getProductId()) + ")\nButton: "
+                        + KeyEvent.keyCodeToString(e.getKeyCode()) + " (" + e.getKeyCode() + ")");
+            }
+        }
+        return super.dispatchKeyEvent(e);
     }
 
     @Override
