@@ -4,7 +4,8 @@
 
 collection: Nintendo GameCube
 shortname: gc
-directories: gc
+# every file outside ROMs/gc is left to the other systems
+ignore-regex: ^(?!.*/gc/)
 extensions: iso, gcm, ciso, gcz, rvz, wbfs, dol, elf
 launch: am start
   -n org.dolphinemu.dolphinemu.rg477m/org.dolphinemu.dolphinemu.ui.main.MainActivity

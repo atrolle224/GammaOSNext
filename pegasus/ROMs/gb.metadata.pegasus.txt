@@ -4,7 +4,8 @@
 
 collection: Game Boy
 shortname: gb
-directories: gb
+# every file outside ROMs/gb is left to the other systems
+ignore-regex: ^(?!.*/gb/)
 extensions: gb, zip, 7z
 launch: am start
   -n com.retroarch.rg477m/com.retroarch.browser.retroactivity.RetroActivityFuture

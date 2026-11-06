@@ -4,7 +4,8 @@
 
 collection: Nintendo 64
 shortname: n64
-directories: n64
+# every file outside ROMs/n64 is left to the other systems
+ignore-regex: ^(?!.*/n64/)
 extensions: n64, z64, v64, zip, 7z
 launch: am start
   -n org.mupen64plusae.v3.fzurita.rg477m/paulscode.android.mupen64plusae.SplashActivity

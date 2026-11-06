@@ -4,7 +4,8 @@
 
 collection: Nintendo Wii
 shortname: wii
-directories: wii
+# every file outside ROMs/wii is left to the other systems
+ignore-regex: ^(?!.*/wii/)
 extensions: iso, ciso, gcz, rvz, wbfs, wad, dol, elf
 launch: am start
   -n org.dolphinemu.dolphinemu.rg477m/org.dolphinemu.dolphinemu.ui.main.MainActivity

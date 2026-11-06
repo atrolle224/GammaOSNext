@@ -4,7 +4,8 @@
 
 collection: Sega CD
 shortname: segacd
-directories: segacd
+# every file outside ROMs/segacd is left to the other systems
+ignore-regex: ^(?!.*/segacd/)
 extensions: chd, cue, iso, m3u
 launch: am start
   -n com.retroarch.rg477m/com.retroarch.browser.retroactivity.RetroActivityFuture

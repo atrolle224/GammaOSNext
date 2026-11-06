@@ -4,7 +4,8 @@
 
 collection: Super Nintendo
 shortname: snes
-directories: snes
+# every file outside ROMs/snes is left to the other systems
+ignore-regex: ^(?!.*/snes/)
 extensions: sfc, smc, zip, 7z
 launch: am start
   -n com.retroarch.rg477m/com.retroarch.browser.retroactivity.RetroActivityFuture

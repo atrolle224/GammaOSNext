@@ -4,7 +4,8 @@
 
 collection: Sega Dreamcast
 shortname: dreamcast
-directories: dreamcast
+# every file outside ROMs/dreamcast is left to the other systems
+ignore-regex: ^(?!.*/dreamcast/)
 extensions: chd, cdi, gdi, cue, zip, 7z
 launch: am start
   -n com.flycast.emulator.rg477m/com.flycast.emulator.MainActivity

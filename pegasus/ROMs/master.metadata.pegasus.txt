@@ -4,7 +4,8 @@
 
 collection: Sega Master System
 shortname: master
-directories: master
+# every file outside ROMs/master is left to the other systems
+ignore-regex: ^(?!.*/master/)
 extensions: sms, zip, 7z
 launch: am start
   -n com.retroarch.rg477m/com.retroarch.browser.retroactivity.RetroActivityFuture

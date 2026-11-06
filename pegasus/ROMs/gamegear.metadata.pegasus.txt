@@ -4,7 +4,8 @@
 
 collection: Sega Game Gear
 shortname: gamegear
-directories: gamegear
+# every file outside ROMs/gamegear is left to the other systems
+ignore-regex: ^(?!.*/gamegear/)
 extensions: gg, zip, 7z
 launch: am start
   -n com.retroarch.rg477m/com.retroarch.browser.retroactivity.RetroActivityFuture

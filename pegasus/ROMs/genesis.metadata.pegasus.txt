@@ -4,7 +4,8 @@
 
 collection: Sega Genesis
 shortname: genesis
-directories: genesis
+# every file outside ROMs/genesis is left to the other systems
+ignore-regex: ^(?!.*/genesis/)
 extensions: md, gen, bin, smd, zip, 7z
 launch: am start
   -n com.retroarch.rg477m/com.retroarch.browser.retroactivity.RetroActivityFuture

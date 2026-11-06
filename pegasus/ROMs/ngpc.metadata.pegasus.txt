@@ -4,7 +4,8 @@
 
 collection: Neo Geo Pocket Color
 shortname: ngpc
-directories: ngpc
+# every file outside ROMs/ngpc is left to the other systems
+ignore-regex: ^(?!.*/ngpc/)
 extensions: ngc, ngp, zip, 7z
 launch: am start
   -n com.retroarch.rg477m/com.retroarch.browser.retroactivity.RetroActivityFuture

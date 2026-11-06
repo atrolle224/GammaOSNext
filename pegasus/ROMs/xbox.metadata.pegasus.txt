@@ -4,7 +4,8 @@
 
 collection: Xbox
 shortname: xbox
-directories: xbox
+# every file outside ROMs/xbox is left to the other systems
+ignore-regex: ^(?!.*/xbox/)
 extensions: iso, xiso, cci, cso
 launch: am start
   -n com.rfandango.haku_x/.LauncherActivity -d {file.uri}

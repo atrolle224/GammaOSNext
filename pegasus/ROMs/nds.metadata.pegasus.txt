@@ -4,7 +4,8 @@
 
 collection: Nintendo DS
 shortname: nds
-directories: nds
+# every file outside ROMs/nds is left to the other systems
+ignore-regex: ^(?!.*/nds/)
 extensions: nds, zip, 7z
 launch: am start
   -n me.magnum.melonds.rg477m/me.magnum.melonds.ui.emulator.EmulatorActivity

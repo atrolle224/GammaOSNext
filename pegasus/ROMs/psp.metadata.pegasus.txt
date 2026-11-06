@@ -4,7 +4,8 @@
 
 collection: PlayStation Portable
 shortname: psp
-directories: psp
+# every file outside ROMs/psp is left to the other systems
+ignore-regex: ^(?!.*/psp/)
 extensions: iso, cso, chd, pbp, elf
 launch: am start
   -n org.ppsspp.ppsspp.rg477m/org.ppsspp.ppsspp.PpssppActivity

@@ -4,7 +4,8 @@
 
 collection: Game Boy Advance
 shortname: gba
-directories: gba
+# every file outside ROMs/gba is left to the other systems
+ignore-regex: ^(?!.*/gba/)
 extensions: gba, zip, 7z
 launch: am start
   -n com.retroarch.rg477m/com.retroarch.browser.retroactivity.RetroActivityFuture

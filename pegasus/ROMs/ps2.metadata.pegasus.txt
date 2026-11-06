@@ -4,7 +4,8 @@
 
 collection: PlayStation 2
 shortname: ps2
-directories: ps2
+# every file outside ROMs/ps2 is left to the other systems
+ignore-regex: ^(?!.*/ps2/)
 extensions: chd, iso, cso, zso, gz, cue
 launch: am start
   -n com.armsx2.netmod/com.armsx2.Main

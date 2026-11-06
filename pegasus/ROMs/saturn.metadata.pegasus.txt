@@ -4,7 +4,8 @@
 
 collection: Sega Saturn
 shortname: saturn
-directories: saturn
+# every file outside ROMs/saturn is left to the other systems
+ignore-regex: ^(?!.*/saturn/)
 extensions: chd, cue, iso, ccd, mds, m3u
 launch: am start
   -n com.explusalpha.SaturnEmu/com.imagine.BaseActivity

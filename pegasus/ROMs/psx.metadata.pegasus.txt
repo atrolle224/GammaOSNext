@@ -4,7 +4,8 @@
 
 collection: PlayStation
 shortname: psx
-directories: psx
+# every file outside ROMs/psx is left to the other systems
+ignore-regex: ^(?!.*/psx/)
 extensions: chd, cue, pbp, m3u, iso, img
 launch: am start
   -n com.retroarch.rg477m/com.retroarch.browser.retroactivity.RetroActivityFuture

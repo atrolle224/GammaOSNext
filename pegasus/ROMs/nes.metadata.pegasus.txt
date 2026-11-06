@@ -4,7 +4,8 @@
 
 collection: Nintendo Entertainment System
 shortname: nes
-directories: nes
+# every file outside ROMs/nes is left to the other systems
+ignore-regex: ^(?!.*/nes/)
 extensions: nes, fds, unf, zip, 7z
 launch: am start
   -n com.retroarch.rg477m/com.retroarch.browser.retroactivity.RetroActivityFuture

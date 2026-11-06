@@ -62,8 +62,12 @@ WHICH APP RUNS WHAT
      MobileUO 477M (UOAlive), Old School RuneScape (from the Play Store)
 
    To use a different app for a system (the official Dolphin, the ARMSX2 DNS
-   build, Yaba Sanshiro 2...), open SD card/ROMs/metadata.pegasus.txt: each
-   system has the other app's launch line commented out under its own.
+   build, Yaba Sanshiro 2...), open that system's file in ROMs on the SD card
+   (gc.metadata.pegasus.txt, ps2.metadata.pegasus.txt...): the other app's
+   launch line is commented out under the one in use.
+
+   Your installed Android apps as a platform too: Pegasus menu > Settings >
+   Data sources > Android Apps.
 
 ARTWORK (optional)
    Box art: Pegasus reads ROMs/<system>/media/<game name>/boxFront.png (also

@@ -4,7 +4,8 @@
 
 collection: Game Boy Color
 shortname: gbc
-directories: gbc
+# every file outside ROMs/gbc is left to the other systems
+ignore-regex: ^(?!.*/gbc/)
 extensions: gbc, gb, zip, 7z
 launch: am start
   -n com.retroarch.rg477m/com.retroarch.browser.retroactivity.RetroActivityFuture
