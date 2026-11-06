@@ -4,8 +4,9 @@
 usage: wallpapers.py <pack dir> <theme dir>
 
 Each wallpaper is cropped to the RG477M's 4:3 screen and saved as
-<theme>/assets/wallpapers/<shortname>.jpg; platforms the pack has no
-wallpaper for get its default one.
+<theme>/assets/wallpapers/<shortname>.jpg. Platforms the pack has no
+wallpaper for keep the theme's colour card: a pack's default wallpaper
+usually names a platform of its own.
 """
 import json
 import os
@@ -19,14 +20,13 @@ os.makedirs(out, exist_ok=True)
 # the theme's platforms; the pack names most of them the same way
 platforms = ["gb", "gbc", "gba", "nes", "snes", "n64", "nds", "gc", "wii", "master", "genesis",
              "gamegear", "segacd", "saturn", "dreamcast", "ngpc", "psx", "ps2", "psp", "xbox",
-             "ports", "android", "recent", "favorites"]
+             "ports", "android"]
 info = json.load(open(os.path.join(pack, "index.json")))
 files = {w["matchPlatformShortname"]: w["filename"] for w in info["wallpaperList"]}
-default = info.get("defaultWallpaperFilename") if info.get("hasDefaultWallpaper") else None
 
 done = 0
 for short in platforms:
-    name = files.get(short) or (short + ".png" if os.path.exists(os.path.join(pack, short + ".png")) else default)
+    name = files.get(short) or (short + ".png" if os.path.exists(os.path.join(pack, short + ".png")) else None)
     if not name:
         continue
     subprocess.run(["convert", os.path.join(pack, name), "-resize", "1280x960^", "-gravity", "center",
