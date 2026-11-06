@@ -64,8 +64,8 @@ WHICH APP RUNS WHAT
    PlayStation 2: ARMSX2 Net                PSP: PPSSPP 477M
    Xbox: hakuX
    Saturn: Saturn.emu (your own copy)
-   Ports: Fallout CE, Fallout 2 CE, Perfect Dark, MobileUO 477M (UOAlive),
-     Old School RuneScape (from the Play Store)
+   Ports: Fallout CE, Fallout 2 CE, Perfect Dark, OpenMW 477M (Morrowind),
+     MobileUO 477M (UOAlive), Old School RuneScape (from the Play Store)
 
    To use a different app for a system (the official Dolphin, the ARMSX2 DNS
    build, Yaba Sanshiro 2...), open that system's file in ROMs on the SD card
@@ -106,3 +106,12 @@ PHANTASY STAR ONLINE EPISODE I & II ON SCHTSERV
    Settings > Cheats, turn on "SCHTSERV: fix error 102" for your version
    (v1.00 or v1.01), and turn on Enable Cheats in Dolphin's settings.
    Current server addresses are listed on schtserv.com.
+
+MORROWIND WITH THE EXPANDED VANILLA MOD LIST
+   On your PC, run RG477M-Morrowind.ps1 (from GammaOSNext/ports/openmw):
+     powershell -ExecutionPolicy Bypass -File .\RG477M-Morrowind.ps1
+   It downloads the mod list with umo (needs Nexus Premium for automatic
+   downloads), sets the load order with momw-configurator and makes
+   C:\Morrowind477M\Morrowind Android. Copy that folder to the RG477M's
+   Internal storage\Documents, then start OpenMW 477M: it finds the folder
+   and uses the list's load order (Settings > Use the installed mod list).
