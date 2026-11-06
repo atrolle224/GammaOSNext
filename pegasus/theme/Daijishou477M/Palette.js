@@ -36,6 +36,16 @@ var platform = {
     "ports": ["#d98e2b", "#4a2c08"]
 };
 
+// carousel order, the way Daijishou groups them; anything else comes after, by name
+var order = ["gb", "gbc", "gba", "nes", "snes", "n64", "nds", "gc", "wii",
+             "master", "genesis", "megadrive", "gamegear", "segacd", "saturn", "dreamcast",
+             "ngpc", "psx", "ps2", "psp", "psvita", "xbox", "ports"];
+
+function rank(shortName) {
+    var i = order.indexOf(shortName);
+    return i < 0 ? order.length : i;
+}
+
 function colours(shortName) {
     return platform[shortName] || ["#3a3f4b", "#16181e"];
 }

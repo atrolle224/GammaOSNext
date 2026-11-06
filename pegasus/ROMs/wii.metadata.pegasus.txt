@@ -1,0 +1,11 @@
+# Nintendo Wii for Pegasus on the RG477M. Games go in ROMs/wii.
+# To use another app, swap the launch line for the commented one below it.
+# game: entries for this system's games (title, description...) can go at the end.
+
+collection: Nintendo Wii
+shortname: wii
+directories: wii
+extensions: iso, ciso, gcz, rvz, wbfs, wad, dol, elf
+launch: am start
+  -n org.dolphinemu.dolphinemu.rg477m/org.dolphinemu.dolphinemu.ui.main.MainActivity
+  -a android.intent.action.MAIN -e AutoStartFile {file.uri}

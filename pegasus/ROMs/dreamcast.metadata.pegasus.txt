@@ -1,0 +1,13 @@
+# Sega Dreamcast for Pegasus on the RG477M. Games go in ROMs/dreamcast.
+# To use another app, swap the launch line for the commented one below it.
+# game: entries for this system's games (title, description...) can go at the end.
+
+collection: Sega Dreamcast
+shortname: dreamcast
+directories: dreamcast
+extensions: chd, cdi, gdi, cue, zip, 7z
+launch: am start
+  -n com.flycast.emulator.rg477m/com.flycast.emulator.MainActivity
+  -a android.intent.action.VIEW -d {file.uri}
+# official Flycast instead:
+# am start -n com.flycast.emulator/com.flycast.emulator.MainActivity -a android.intent.action.VIEW -d {file.uri}

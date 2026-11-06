@@ -18,14 +18,38 @@ FocusScope {
             list.push({ kind: "recent", shortName: "recent", name: "Recently Played", count: recentGames.count });
         if (favoriteGames.count > 0)
             list.push({ kind: "favorites", shortName: "favorites", name: "Favorites", count: favoriteGames.count });
+        var colls = [];
         for (var i = 0; i < api.collections.count; i++) {
             var c = api.collections.get(i);
-            list.push({ kind: "collection", index: i, shortName: c.shortName, name: c.name, count: c.games.count });
+            colls.push({ kind: "collection", index: i, shortName: c.shortName, name: c.name, count: c.games.count });
         }
-        return list;
+        colls.sort(function (a, b) { return P.rank(a.shortName) - P.rank(b.shortName) || a.name.localeCompare(b.name); });
+        return list.concat(colls);
     }
-    readonly property var platform: platforms[carousel.currentIndex] || null
-    readonly property string platformShort: platform ? platform.shortName : ""
+    // the platform follows its name, not its place, as Favorites and Recently Played come and go
+    property string platformShort: ""
+    property bool restored: false
+    readonly property var platform: {
+        for (var i = 0; i < platforms.length; i++)
+            if (platforms[i].shortName === platformShort)
+                return platforms[i];
+        return platforms.length > 0 ? platforms[0] : null;
+    }
+
+    function indexOfPlatform(shortName) {
+        for (var i = 0; i < platforms.length; i++)
+            if (platforms[i].shortName === shortName)
+                return i;
+        return -1;
+    }
+
+    onPlatformsChanged: {
+        if (!restored)
+            return;
+        var i = indexOfPlatform(platformShort);
+        if (i >= 0 && i !== carousel.currentIndex)
+            carousel.currentIndex = i;
+    }
     property bool inList: false
     property int sortMode: 0  // 0 by title, 1 by last played
 
@@ -222,7 +246,12 @@ FocusScope {
                     incrementCurrentIndex();
                 }
             }
-            onCurrentIndexChanged: if (platform) api.memory.set("platform", platform.shortName)
+            onCurrentIndexChanged: {
+                if (!root.restored || !platforms[currentIndex])
+                    return;
+                root.platformShort = platforms[currentIndex].shortName;
+                api.memory.set("platform", root.platformShort);
+            }
         }
 
         Column {
@@ -242,7 +271,7 @@ FocusScope {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 visible: platforms.length > 0
-                text: (carousel.currentIndex + 1) + " / " + platforms.length
+                text: (indexOfPlatform(platformShort) + 1) + " / " + platforms.length
                 color: P.dim
                 font.family: global.fonts.sans
                 font.pixelSize: vpx(16)
@@ -531,16 +560,11 @@ FocusScope {
     }
 
     Component.onCompleted: {
-        var saved = api.memory.get("platform");
-        var start = 0;
-        for (var i = 0; i < platforms.length; i++) {
-            if (platforms[i].shortName === saved) {
-                start = i;
-                break;
-            }
-        }
+        var start = Math.max(0, indexOfPlatform(api.memory.get("platform")));
+        platformShort = platforms[start] ? platforms[start].shortName : "";
         carousel.currentIndex = start;
         carousel.positionViewAtIndex(start, ListView.Center);
+        restored = true;
         if (api.memory.get("inList")) {
             api.memory.unset("inList");
             openList();

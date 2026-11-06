@@ -1,0 +1,14 @@
+# PlayStation 2 for Pegasus on the RG477M. Games go in ROMs/ps2.
+# To use another app, swap the launch line for the commented one below it.
+# game: entries for this system's games (title, description...) can go at the end.
+
+collection: PlayStation 2
+shortname: ps2
+directories: ps2
+extensions: chd, iso, cso, zso, gz, cue
+launch: am start
+  -n com.armsx2.netmod/com.armsx2.Main
+  -a android.intent.action.VIEW -d {file.uri}
+  --activity-clear-task --activity-clear-top
+# the DNS (EQOA) build instead:
+# am start -n com.armsx2.dnsmod/com.armsx2.Main -a android.intent.action.VIEW -d {file.uri} --activity-clear-task --activity-clear-top

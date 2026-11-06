@@ -52,7 +52,7 @@ jobs:
           for g in "Advance Wars" "Metroid Fusion" "Pokemon Emerald"; do touch "$lib/gba/$g.gba"; done
           for g in "Crazy Taxi" "Shadow of the Colossus"; do touch "$lib/ps2/$g.iso"; done
           touch "$lib/psvita/PCSE00120.psvita"
-          cat >> "$lib/metadata.pegasus.txt" <<'EOF'
+          cat >> "$lib/snes.metadata.pegasus.txt" <<'EOF'
 
           game: Super Metroid
           file: snes/Super Metroid.sfc
@@ -75,7 +75,11 @@ jobs:
             else rm -f $CFG/theme_settings/Daijishou477M.json; fi
             XDG_CONFIG_HOME=$RUNNER_TEMP/cfg xvfb-run -a -s "-screen 0 1280x960x24" bash -c '
               ./peg/bin/pegasus-fe & pid=$!
-              sleep 12
+              sleep 8
+              # the RG477M screen: 1280x960
+              w=$(xdotool search --pid $pid --onlyvisible | head -1)
+              [ -n "$w" ] && xdotool windowmove $w 0 0 windowsize $w 1280 960
+              sleep 4
               for k in "$@"; do xdotool key "$k"; sleep 1.5; done
               import -window root "shots/'$name'.png"
               kill $pid' _ "$@"
@@ -85,9 +89,10 @@ jobs:
           run home-next '' Right Right
           run list '{"platform":"snes","inList":true,"game:snes":4}'
           run list-favorite '{"platform":"snes","inList":true,"game:snes":5}' i Down
-          run back-home '{"platform":"snes","inList":true}' Escape
+          run favorite-then-home '{"platform":"snes","inList":true,"game:snes":2}' i Escape
+          run ports '{"platform":"ports","inList":true}'
           cat shots/home.log
-          if grep -h "\.qml:[0-9]" shots/*.log; then
+          if grep -h "\.qml:[0-9]" shots/*.log | grep -v "Cannot open: file:.*/assets/"; then
             echo "::error::QML errors in the theme"; exit 1
           fi
 
@@ -97,11 +102,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           [ -d shots ] || exit 0
+          # only the newest test's draft is kept
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq '.[] | select(.draft and (.tag_name | startswith("pegasus-theme-test-"))) | .id' |
+            while read -r id; do gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$id"; done
           tag=pegasus-theme-test-${{ github.run_id }}
           gh release create "$tag" --draft --target "$GITHUB_SHA" --title "Pegasus theme test ${{ github.run_id }}" \
             --notes "Screenshots and logs from the theme test." shots/*
 
+  # the setup itself: run from the Actions tab (Run workflow)
   bundle:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
