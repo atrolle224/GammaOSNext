@@ -59,3 +59,10 @@ MORROWIND WITH THE EXPANDED VANILLA MOD LIST
    C:\Morrowind477M\Morrowind Android and a zip of it; put that folder in the
    RG477M's Internal storage\Documents. The Morrowind platform starts the game
    directly with the list's load order.
+
+OLD SCHOOL RUNESCAPE WITH THE CONTROLLER (no root needed)
+   1. Install Old School RuneScape from the Play Store, and OSRS-Pad-477M.apk.
+   2. Open OSRS Pad 477M > Accessibility settings and turn it on. If Android says
+      it's a restricted setting: OSRS Pad 477M > App info > the ⋮ menu (top right)
+      > Allow restricted settings, then turn it on again.
+   3. Start Old School RuneScape from the Ports. Start shows the controls.

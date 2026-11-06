@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">OSRS Pad 477M</string>
+    <string name="service_description">Plays Old School RuneScape with a controller: the buttons tap, long-press and zoom at an on-screen cursor. It only acts while Old School RuneScape is open, reads nothing on screen, and every button press is one action.</string>
 </resources>

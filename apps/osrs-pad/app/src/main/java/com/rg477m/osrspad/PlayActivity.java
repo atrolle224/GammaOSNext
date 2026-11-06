@@ -5,15 +5,18 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
-/** Daijishou's Play button: start the controller helper, then open Old School RuneScape. */
+/** Daijishou's Play button: open Old School RuneScape, or the setup if the service is off. */
 public class PlayActivity extends Activity {
     static final String OSRS = "com.jagex.oldscape.android";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (!PadService.running) {
-            startForegroundService(new Intent(this, PadService.class));
+        if (PadAccessibilityService.instance == null) {
+            Toast.makeText(this, "Turn on OSRS Pad 477M in Accessibility settings first", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
+            return;
         }
         Intent game = getPackageManager().getLaunchIntentForPackage(OSRS);
         if (game != null) {

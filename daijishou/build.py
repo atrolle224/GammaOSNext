@@ -103,8 +103,8 @@ PORTS = [
      "\n --ez rg477m.autostart true", "OpenMW 477M with the mod list from RG477M-Morrowind.ps1; starts the game directly."),
     ("Ultima Online", "Ultima Online (UOAlive)", "ultimaonline477m", "com.mobileuo.mobileuo.rg477m/com.unity3d.player.UnityPlayerActivity", "",
      "MobileUO 477M set up for UOAlive, with controller play."),
-    ("Old School RuneScape", "Old School RuneScape", "osrs477m", "com.jagex.oldscape.android/com.jagex.android.MainActivity",
-     "\n -a android.intent.action.MAIN\n -c android.intent.category.LAUNCHER", "The official Old School RuneScape app."),
+    ("Old School RuneScape", "Old School RuneScape", "osrs477m", "com.rg477m.osrspad/com.rg477m.osrspad.PlayActivity", "",
+     "The official Old School RuneScape app, opened through OSRS Pad 477M for controller play."),
 ]
 
 
@@ -168,6 +168,9 @@ for folder, title, uid, component, extra, desc in PORTS:
         "playerList": [player(f"{uid}.play", f"{uid} - {title}", desc, f"-n {component}{extra}\n --activity-clear-task",
                               r"^(?!(?:\._|\.).*).*\.dpt$")],
     }
+    if component.startswith("com.rg477m.osrspad/"):
+        # killing the package would stop the controller service it hosts
+        data["playerList"][0]["killPackageProcesses"] = False
     fname = "Port - " + folder + ".json"
     with open(os.path.join(platforms_out, fname), "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)

@@ -1,9 +1,9 @@
 package com.rg477m.osrspad;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.TypedValue;
@@ -11,27 +11,29 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
-/** Start/stop, the one-time permissions, and the controls. */
+/** Turning the service on, the options, and the controls. */
 public class MainActivity extends Activity {
     static final String PREFS = "pad";
-    static final String KEY_AUTOSTART = "autostart";
+    static final String KEY_CAPTURE = "capture";
+    static final String KEY_SPEED = "speed";
 
-    static final String CONTROLS =
-            "OSRS PAD 477M CONTROLS\n\n"
-            + "Right stick  -  move the cursor (R3 centres it)\n"
-            + "A  -  tap / attack / interact where the cursor is (hold to drag)\n"
-            + "B  -  long-press: the right-click options menu\n"
-            + "Left stick  -  walk: one step-tap per push in that direction\n"
-            + "D-pad  -  turn the camera\n"
-            + "L1 / R1  -  zoom out / in\n"
-            + "X  -  continue dialogue (Space)\n"
-            + "Y or Start  -  close the open interface (Esc)\n"
-            + "L2 / R2 (hold)  -  Shift / Ctrl\n"
-            + "Select  -  chat (Enter)\n"
-            + "L3  -  show these controls again\n\n"
-            + "Both controllers work at once. Touch still works as normal.";
+    private TextView status;
+
+    static String controls() {
+        return "OSRS PAD 477M CONTROLS\n\n"
+                + "D-pad (or either stick)  -  move the cursor, faster the longer you hold\n"
+                + "A or R3 (right stick click)  -  tap / attack / interact at the cursor\n"
+                + "B or L3 (left stick click)  -  long-press: the right-click options menu\n"
+                + "L1 / R1  -  zoom out / in\n"
+                + "X  -  camera mode: the d-pad turns the camera (cursor turns blue)\n"
+                + "Y  -  back: close the open interface\n"
+                + "Select  -  sticks on/off (off lets the touch keyboard type in chat)\n"
+                + "Start  -  show these controls\n\n"
+                + "Touch still works as normal.";
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,67 +51,82 @@ public class MainActivity extends Activity {
         box.addView(title);
 
         TextView about = new TextView(this);
-        about.setText("Plays the official Old School RuneScape app with your controller. It only takes over "
-                + "while OSRS is open and does nothing on its own: every button press is one action. "
-                + "The first start asks Magisk for root and turns on the cursor overlay.");
+        about.setText("Plays the official Old School RuneScape app with your controller, no root needed. "
+                + "It only acts while OSRS is open, and every button press is one action.\n\n"
+                + "One-time setup:\n"
+                + "1. Tap \"Accessibility settings\" and turn on OSRS Pad 477M.\n"
+                + "2. If Android says it's a restricted setting: tap \"App info\" below, then the ⋮ menu "
+                + "(top right) → \"Allow restricted settings\", and do step 1 again.");
         about.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         about.setPadding(0, pad / 2, 0, pad / 2);
         box.addView(about);
 
-        TextView status = new TextView(this);
+        status = new TextView(this);
         status.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         box.addView(status);
 
-        Button start = new Button(this);
-        start.setText("Start");
-        start.setOnClickListener(v -> {
-            grantOnce();
-            startForegroundService(new Intent(this, PadService.class));
-            status.setText("Running. Open Old School RuneScape.");
-        });
-        box.addView(start);
+        Button access = new Button(this);
+        access.setText("Accessibility settings");
+        access.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+        box.addView(access);
 
-        Button stop = new Button(this);
-        stop.setText("Stop");
-        stop.setOnClickListener(v -> {
-            stopService(new Intent(this, PadService.class));
-            status.setText("Stopped.");
-        });
-        box.addView(stop);
+        Button info = new Button(this);
+        info.setText("App info");
+        info.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:" + getPackageName()))));
+        box.addView(info);
 
-        CheckBox auto = new CheckBox(this);
-        auto.setText("Start automatically after a reboot");
-        auto.setChecked(prefs.getBoolean(KEY_AUTOSTART, true));
-        auto.setOnCheckedChangeListener((b, on) -> prefs.edit().putBoolean(KEY_AUTOSTART, on).apply());
-        box.addView(auto);
+        Button play = new Button(this);
+        play.setText("Play Old School RuneScape");
+        play.setOnClickListener(v -> startActivity(new Intent(this, PlayActivity.class)));
+        box.addView(play);
+
+        CheckBox capture = new CheckBox(this);
+        capture.setText("Read the d-pad and sticks (needed on controllers whose d-pad works like a stick, "
+                + "such as Xbox ones; turn off if OSRS misbehaves)");
+        capture.setChecked(prefs.getBoolean(KEY_CAPTURE, true));
+        capture.setOnCheckedChangeListener((b, on) -> prefs.edit().putBoolean(KEY_CAPTURE, on).apply());
+        box.addView(capture);
+
+        TextView speedLabel = new TextView(this);
+        speedLabel.setText("Cursor speed");
+        speedLabel.setPadding(0, pad / 2, 0, 0);
+        box.addView(speedLabel);
+        SeekBar speed = new SeekBar(this);
+        speed.setMax(6);
+        speed.setProgress(prefs.getInt(KEY_SPEED, 2));
+        speed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar s, int value, boolean fromUser) {
+                prefs.edit().putInt(KEY_SPEED, value).apply();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar s) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar s) {
+            }
+        });
+        box.addView(speed);
 
         TextView controls = new TextView(this);
-        controls.setText(CONTROLS);
+        controls.setText(controls());
         controls.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         controls.setPadding(0, pad, 0, 0);
         box.addView(controls);
-
-        status.setText(PadService.running ? "Running." : "Not running.");
 
         ScrollView scroll = new ScrollView(this);
         scroll.addView(box);
         setContentView(scroll);
     }
 
-    /** Overlay and notification permissions, granted through Magisk so there is no settings detour. */
-    private void grantOnce() {
-        String pkg = getPackageName();
-        if (!Settings.canDrawOverlays(this)) {
-            try {
-                Runtime.getRuntime().exec(new String[] {"su", "-c", "appops set " + pkg + " SYSTEM_ALERT_WINDOW allow; "
-                        + "pm grant " + pkg + " " + Manifest.permission.POST_NOTIFICATIONS}).waitFor();
-            } catch (Exception ignored) {
-                // falls back to the settings screen below
-            }
-        }
-        if (!Settings.canDrawOverlays(this)) {
-            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    android.net.Uri.parse("package:" + pkg)));
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        status.setText(PadAccessibilityService.instance != null
+                ? "Ready: open Old School RuneScape."
+                : "Off: turn it on in Accessibility settings.");
     }
 }
