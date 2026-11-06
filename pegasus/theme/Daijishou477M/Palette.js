@@ -34,7 +34,8 @@ var platform = {
     "psp": ["#2b2b33", "#0c0c10"],
     "psvita": ["#1f5fbf", "#0a224a"],
     "xbox": ["#2e8b2e", "#0d330d"],
-    "ports": ["#d98e2b", "#4a2c08"]
+    "ports": ["#d98e2b", "#4a2c08"],
+    "Android": ["#2fa36b", "#0b3a25"]
 };
 
 // carousel order, the way Daijishou groups them; anything else comes after, by name

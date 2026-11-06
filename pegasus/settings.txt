@@ -1,3 +1,2 @@
 general.theme: /storage/emulated/0/pegasus-frontend/themes/Daijishou477M/
 general.input-mouse-support: true
-providers.androidapps.enabled: false

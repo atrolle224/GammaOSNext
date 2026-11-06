@@ -72,8 +72,7 @@ WHICH APP RUNS WHAT
    (gc.metadata.pegasus.txt, ps2.metadata.pegasus.txt...): the other app's
    launch line is commented out under the one in use.
 
-   Your installed Android apps as a platform too: Pegasus menu > Settings >
-   Data sources > Android Apps.
+
 
 ARTWORK (optional)
    Box art: Pegasus reads ROMs/<system>/media/<game name>/boxFront.png (also
@@ -81,3 +80,9 @@ ARTWORK (optional)
    Platform wallpapers: put <system>.jpg (gb.jpg, snes.jpg, ps2.jpg...) in
    pegasus-frontend/themes/Daijishou477M/assets/wallpapers, and a logo
    <system>.png in .../assets/logos. Without them each platform gets its own colour.
+
+APPS
+   The Apps card, next to RetroAchievements, lists every app installed on the
+   device as an icon grid: A opens one, X marks it a favourite, L1/R1 page.
+   Pegasus reads the app list on its own; if the card is missing, turn on
+   Start > Settings > Data sources > Android Apps.

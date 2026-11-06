@@ -11,9 +11,16 @@ import "Palette.js" as P
 FocusScope {
     id: root
 
-    // Home lists RetroAchievements, then Recently Played and Favorites when they have games, then every collection.
+    // Home lists RetroAchievements, the Android apps, Recently Played and Favorites when they have games,
+    // then every collection.
     readonly property var platforms: {
         var list = [{ kind: "ra", shortName: "retroachievements", name: "RetroAchievements", count: -1 }];
+        for (var a = 0; a < api.collections.count; a++) {
+            if (api.collections.get(a).shortName === "Android") {
+                var apps = api.collections.get(a);
+                list.push({ kind: "apps", index: a, shortName: "Android", name: "Apps", count: apps.games.count });
+            }
+        }
         if (recentGames.count > 0)
             list.push({ kind: "recent", shortName: "recent", name: "Recently Played", count: recentGames.count });
         if (favoriteGames.count > 0)
@@ -21,6 +28,8 @@ FocusScope {
         var colls = [];
         for (var i = 0; i < api.collections.count; i++) {
             var c = api.collections.get(i);
+            if (c.shortName === "Android")
+                continue;
             colls.push({ kind: "collection", index: i, shortName: c.shortName, name: c.name, count: c.games.count });
         }
         colls.sort(function (a, b) { return P.rank(a.shortName) - P.rank(b.shortName) || a.name.localeCompare(b.name); });
@@ -52,10 +61,12 @@ FocusScope {
     }
     property bool inList: false
     property bool inRa: false
-    readonly property bool away: inList || inRa
+    property bool inApps: false
+    readonly property bool away: inList || inRa || inApps
     property int sortMode: 0  // 0 by title, 1 by last played
 
     readonly property var currentGame: gameAt(gameList.currentIndex)
+    readonly property var currentApp: inApps ? gameAt(appsPage.currentIndex) : null
 
     function gameAt(i) {
         if (i < 0 || i >= games.count)
@@ -71,6 +82,12 @@ FocusScope {
         }
         if (!platform || platform.count === 0)
             return;
+        if (platform.kind === "apps") {
+            inApps = true;
+            var at = api.memory.get("game:Android");
+            appsPage.open(at !== undefined ? at : 0);
+            return;
+        }
         inList = true;
         var saved = api.memory.get("game:" + platformShort);
         gameList.currentIndex = (saved !== undefined && saved < games.count) ? saved : 0;
@@ -81,6 +98,34 @@ FocusScope {
     function closeList() {
         api.memory.set("game:" + platformShort, gameList.currentIndex);
         inList = false;
+        carousel.forceActiveFocus();
+    }
+
+    // the first app icons, for the Apps card
+    function appIcons(collectionIndex) {
+        var list = [];
+        var g = api.collections.get(collectionIndex).games;
+        for (var i = 0; i < g.count && list.length < 9; i++) {
+            var icon = g.get(i).assets.boxFront;
+            if (icon)
+                list.push(icon);
+        }
+        return list;
+    }
+
+    function launchApp(i) {
+        var app = gameAt(i);
+        if (!app)
+            return;
+        api.memory.set("platform", "Android");
+        api.memory.set("game:Android", i);
+        api.memory.set("inList", true);
+        app.launch();
+    }
+
+    function closeApps() {
+        api.memory.set("game:Android", appsPage.currentIndex);
+        inApps = false;
         carousel.forceActiveFocus();
     }
 
@@ -127,7 +172,7 @@ FocusScope {
     SortFilterProxyModel {
         id: games
         sourceModel: !platform ? null
-                   : platform.kind === "collection" ? api.collections.get(platform.index).games
+                   : platform.kind === "collection" || platform.kind === "apps" ? api.collections.get(platform.index).games
                    : api.allGames
         filters: [
             RangeFilter { roleName: "playCount"; minimumValue: 1; enabled: platform && platform.kind === "recent" },
@@ -187,8 +232,9 @@ FocusScope {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        title: inRa ? "RetroAchievements" : inList && platform ? platform.name : "Library"
-        subtitle: inRa ? "" : inList ? games.count + (games.count === 1 ? " game" : " games")
+        title: inRa ? "RetroAchievements" : inApps ? "Apps" : inList && platform ? platform.name : "Library"
+        subtitle: inRa ? "" : inApps ? games.count + (games.count === 1 ? " app" : " apps")
+                : inList ? games.count + (games.count === 1 ? " game" : " games")
                 : (platforms.length - 1 + " platforms")
     }
 
@@ -243,6 +289,8 @@ FocusScope {
                     shortName: platforms[index].shortName
                     name: platforms[index].name
                     count: platforms[index].count
+                    unit: platforms[index].kind === "apps" ? "app" : "game"
+                    previews: platforms[index].kind === "apps" ? root.appIcons(platforms[index].index) : []
                     selected: current
                 }
 
@@ -322,6 +370,21 @@ FocusScope {
 
     RaData {
         id: raData
+    }
+
+    AppsPage {
+        id: appsPage
+        anchors.top: topBar.bottom
+        anchors.bottom: bottomBar.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        visible: opacity > 0
+        opacity: inApps ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 160 } }
+        model: inApps ? games : null
+        appAt: root.gameAt
+        onBack: root.closeApps()
+        onLaunch: root.launchApp(index)
     }
 
     RetroAchievementsPage {
@@ -592,13 +655,14 @@ FocusScope {
             anchors.verticalCenter: parent.verticalCenter
             spacing: vpx(22)
 
-            Hint { visible: !inRa; button: "L1 R1"; label: inList ? "Letter" : "Scroll" }
+            Hint { visible: !inRa; button: "L1 R1"; label: inList ? "Letter" : inApps ? "Page" : "Scroll" }
+            Hint { visible: inApps; button: "X"; label: currentApp && currentApp.favorite ? "Unfavorite" : "Favorite" }
             Hint { visible: inList; button: "Y"; label: sortMode === 0 ? "Sort: A-Z" : "Sort: Recent" }
             Hint { visible: inList; button: "X"; label: currentGame && currentGame.favorite ? "Unfavorite" : "Favorite" }
             Hint { visible: inRa && !raPage.editing; button: "Y"; label: "Account" }
             Hint { visible: inRa && !raPage.editing; button: "X"; label: "Refresh" }
             Hint { visible: away; button: "B"; label: "Back" }
-            Hint { visible: !inRa || raPage.editing; button: "A"; label: inRa ? "Type" : inList ? "Play" : "Open"; face: P.accent }
+            Hint { visible: !inRa || raPage.editing; button: "A"; label: inRa ? "Type" : inList || inApps ? "Play" : "Open"; face: P.accent }
         }
 
         Hint {

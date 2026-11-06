@@ -8,6 +8,8 @@ Item {
     property string shortName
     property string name
     property int count
+    property string unit: "game"
+    property var previews: []
     property bool selected
 
     readonly property var cols: P.colours(shortName)
@@ -48,6 +50,30 @@ Item {
             }
         }
 
+        // a few icons from the collection, for the Apps card
+        Grid {
+            visible: card.previews.length > 0
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: vpx(34)
+            columns: 3
+            spacing: vpx(14)
+
+            Repeater {
+                model: card.previews
+
+                Image {
+                    width: vpx(62)
+                    height: width
+                    source: modelData
+                    sourceSize.width: 128
+                    sourceSize.height: 128
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                }
+            }
+        }
+
         Image {
             id: logo
             anchors.centerIn: parent
@@ -62,6 +88,7 @@ Item {
         Text {
             visible: !logo.visible
             anchors.centerIn: parent
+            anchors.verticalCenterOffset: card.previews.length > 0 ? parent.height * 0.2 : 0
             width: parent.width - vpx(32)
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.WordWrap
@@ -78,7 +105,7 @@ Item {
             anchors.left: parent.left
             anchors.bottom: parent.bottom
             anchors.margins: vpx(18)
-            text: card.count < 0 ? "Your profile" : card.count + (card.count === 1 ? " game" : " games")
+            text: card.count < 0 ? "Your profile" : card.count + " " + card.unit + (card.count === 1 ? "" : "s")
             color: P.text
             font.family: global.fonts.sans
             font.pixelSize: vpx(16)
