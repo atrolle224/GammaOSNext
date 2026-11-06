@@ -29,6 +29,14 @@ jobs:
           unzip -q peg/pegasus-fe_*_x11-static.zip -d peg/bin
           if ldd peg/bin/pegasus-fe | grep "not found"; then exit 1; fi
 
+      - name: Epic ArtBook Noir wallpapers
+        run: |
+          set -e
+          command -v convert > /dev/null || { sudo apt-get update -q; sudo apt-get install -y -q imagemagick; }
+          git clone -q --depth 1 --filter=blob:none --sparse https://github.com/TapiocaFox/Daijishou dj
+          git -C dj sparse-checkout set themes/platform_wallpapers_packs/EpicArtBookNoir
+          python3 pegasus/wallpapers.py dj/themes/platform_wallpapers_packs/EpicArtBookNoir pegasus/theme/Daijishou477M
+
       - name: Test library
         run: |
           set -e
@@ -147,6 +155,14 @@ jobs:
           mkdir apks
           git clone -q --depth 1 -b continuous-android64 https://github.com/mmatyas/pegasus-deploy-staging peg
           cp peg/pegasus-fe_*_android64.apk apks/Pegasus.apk
+
+      - name: Epic ArtBook Noir wallpapers
+        run: |
+          set -e
+          command -v convert > /dev/null || { sudo apt-get update -q; sudo apt-get install -y -q imagemagick; }
+          git clone -q --depth 1 --filter=blob:none --sparse https://github.com/TapiocaFox/Daijishou dj
+          git -C dj sparse-checkout set themes/platform_wallpapers_packs/EpicArtBookNoir
+          python3 pegasus/wallpapers.py dj/themes/platform_wallpapers_packs/EpicArtBookNoir pegasus/theme/Daijishou477M
 
       - name: The 477M builds
         env:

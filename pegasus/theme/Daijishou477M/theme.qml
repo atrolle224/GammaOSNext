@@ -214,7 +214,7 @@ FocusScope {
         asynchronous: true
         sourceSize.width: 640
         visible: status === Image.Ready
-        opacity: inList ? 0.22 : 0.4
+        opacity: away ? 0.22 : 0.5
         Behavior on opacity { NumberAnimation { duration: 200 } }
     }
 

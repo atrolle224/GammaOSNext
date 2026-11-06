@@ -85,8 +85,9 @@ Item {
             visible: status === Image.Ready
         }
 
+        // a wallpaper with the platform's name in it needs no title over it
         Text {
-            visible: !logo.visible
+            visible: !logo.visible && !wallpaper.visible
             anchors.centerIn: parent
             anchors.verticalCenterOffset: card.previews.length > 0 ? parent.height * 0.2 : 0
             width: parent.width - vpx(32)

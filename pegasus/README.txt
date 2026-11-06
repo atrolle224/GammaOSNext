@@ -74,12 +74,17 @@ WHICH APP RUNS WHAT
 
 
 
+WALLPAPERS
+   The platform wallpapers are the Epic ArtBook Noir pack by Jamesinorbit,
+   made for Daijishou, cropped to the RG477M's 4:3 screen. To use your own,
+   replace the files in pegasus-frontend/themes/Daijishou477M/assets/wallpapers
+   (<system>.jpg, 1280x960).
+
 ARTWORK (optional)
    Box art: Pegasus reads ROMs/<system>/media/<game name>/boxFront.png (also
    screenshot.png, logo.png, background.png). Skraper can make these.
-   Platform wallpapers: put <system>.jpg (gb.jpg, snes.jpg, ps2.jpg...) in
-   pegasus-frontend/themes/Daijishou477M/assets/wallpapers, and a logo
-   <system>.png in .../assets/logos. Without them each platform gets its own colour.
+   Platform logos: a <system>.png in pegasus-frontend/themes/Daijishou477M/assets/logos
+   is drawn over that platform's card.
 
 APPS
    The Apps card, next to RetroAchievements, lists every app installed on the
