@@ -174,6 +174,8 @@ $vanillaPaths = @((Resolve-Path $dataFiles).Path.TrimEnd('\'), $vanilla.TrimEnd(
 $extra = Join-Path $Momw "extra"
 $extraCount = 0
 $lines = New-Object System.Collections.Generic.List[string]
+$problems = New-Object System.Collections.Generic.List[string]
+$pcData = New-Object System.Collections.Generic.List[string]
 $counts = @{ data = 0; content = 0; groundcover = 0; "fallback-archive" = 0 }
 
 function To-Android([string]$path) {
@@ -198,7 +200,8 @@ foreach ($raw in Get-Content $pcCfg) {
     $key = $Matches[1]; $value = $Matches[2].Trim()
     if ($key -eq "data") {
         $path = $value.Trim('"').Replace('&&', '&')
-        if (-not (Test-Path $path)) { Write-Host "  missing folder, skipped: $path" -ForegroundColor Yellow; continue }
+        if (-not (Test-Path $path)) { $problems.Add("missing mod folder: $path"); continue }
+        $pcData.Add($path)
         $value = '"' + (To-Android $path).Replace('&', '&&') + '"'
     }
     $lines.Add("$key=$value")
@@ -215,15 +218,63 @@ if ($navmesh) { Copy-Item $navmesh.FullName $Momw -Force } else { Write-Host "  
 Write-Host ("openmw.cfg: {0} folders, {1} plugins, {2} groundcover, {3} archives" -f `
     $counts.data, $counts.content, $counts.groundcover, $counts["fallback-archive"])
 
+# ---------------------------------------------------------------------------- checks
+
+Step "Checking the mod list"
+# every plugin and grass file must be in one of the data folders; OpenMW takes a file from the
+# last folder that has it, as it will on the RG477M
+$plugins = $lines | Where-Object { $_ -match '^(content|groundcover|fallback-archive)=' }
+foreach ($entry in $plugins) {
+    $file = $entry.Substring($entry.IndexOf('=') + 1).Trim().Trim('"')
+    $found = $false
+    for ($i = $pcData.Count - 1; $i -ge 0 -and -not $found; $i--) {
+        if (Test-Path -LiteralPath (Join-Path $pcData[$i] $file)) { $found = $true }
+    }
+    if (-not $found -and $file -notmatch '^(Morrowind|Tribunal|Bloodmoon)\.(esm|bsa)$') {
+        $problems.Add("not in any mod folder: $entry")
+    }
+}
+# the same plugins, in the same order, as the configurator's load order
+$pcOrder = Get-Content $pcCfg | ForEach-Object { $_.Trim() } | Where-Object { $_ -match '^(content|groundcover)\s*=' } |
+    ForEach-Object { ($_ -replace '\s*=\s*', '=') }
+$outOrder = $lines | Where-Object { $_ -match '^(content|groundcover)=' }
+if (($pcOrder -join "`n") -ne ($outOrder -join "`n")) { $problems.Add("the plugin order differs from the configurator's openmw.cfg") }
+# grass needs the plugins and [Groundcover] enabled = true
+$settingsOut = Join-Path $Momw "settings.cfg"
+if ($counts.groundcover -gt 0 -and (Test-Path $settingsOut)) {
+    $section = ""; $grassOn = $null
+    foreach ($l in Get-Content $settingsOut) {
+        $t = $l.Trim()
+        if ($t -match '^\[(.+)\]$') { $section = $Matches[1] }
+        elseif ($section -ieq "Groundcover" -and $t -match '^enabled\s*=\s*(\S+)') { $grassOn = $Matches[1] }
+    }
+    if ($grassOn -and $grassOn -ine "true") { $problems.Add("settings.cfg has [Groundcover] enabled = $grassOn though the list has $($counts.groundcover) grass plugins") }
+}
+$report = @(
+    "$ListName ($List)",
+    ("{0} folders, {1} plugins, {2} grass plugins, {3} archives" -f $counts.data, $counts.content, $counts.groundcover, $counts["fallback-archive"]),
+    "",
+    "Load order:"
+) + ($lines | Where-Object { $_ -match '^(content|groundcover|fallback-archive)=' })
+if ($problems.Count -gt 0) { $report = @("PROBLEMS:") + $problems + @("") + $report }
+[IO.File]::WriteAllLines((Join-Path $Momw "check.txt"), $report)
+if ($problems.Count -gt 0) {
+    $problems | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+    Write-Host "Run this script again to resume umo; the list in momw\check.txt" -ForegroundColor Red
+} else {
+    Write-Host "All folders and plugins present, in the configurator's order (momw\check.txt)." -ForegroundColor Green
+}
+
 # ---------------------------------------------------------------------------- done
 
 $sizeGb = [math]::Round(((Get-ChildItem $Out -Recurse -File | Measure-Object Length -Sum).Sum) / 1GB, 1)
 Step "Ready: $Out ($sizeGb GB)"
 Write-Host "Copy the whole 'Morrowind Android' folder to the RG477M's Internal storage\Documents"
 Write-Host "(a USB cable to the PC is the fastest way). Then start OpenMW 477M."
-if (Ask "Also make a zip of it ($Work\Morrowind Android.zip; slow for $sizeGb GB)?") {
-    tar.exe -a -c -f (Join-Path $Work "Morrowind Android.zip") -C $Work "Morrowind Android"
-    if ($LASTEXITCODE -ne 0) { Fail "Making the zip failed ($LASTEXITCODE)." }
-    Write-Host "Zip: $Work\Morrowind Android.zip"
-}
+Step "Zipping (a while for $sizeGb GB)"
+$zipFile = Join-Path $Work "Morrowind Android.zip"
+Remove-Item -LiteralPath $zipFile -ErrorAction SilentlyContinue
+tar.exe -a -c -f $zipFile -C $Work "Morrowind Android"
+if ($LASTEXITCODE -ne 0) { Fail "Making the zip failed ($LASTEXITCODE)." }
+Write-Host "Zip: $zipFile. Unzip it into Internal storage\Documents on the RG477M."
 Write-Host "The download cache $Cache can be deleted now."
