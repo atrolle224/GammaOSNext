@@ -107,8 +107,8 @@ jobs:
           run list-favorite '{"platform":"snes","inList":true,"game:snes":5}' i Down
           run favorite-then-home '{"platform":"snes","inList":true,"game:snes":2}' i Escape
           run ports '{"platform":"ports","inList":true}'
-          run apps-home '{"platform":"Android"}'
-          run apps '{"platform":"Android"}' Return Right Right Down
+          run apps-home '{"platform":"android"}'
+          run apps '{"platform":"android"}' Return Right Right Down
           run ra-setup '{"platform":"retroachievements"}' Return
           ra='"ra_user":"Andre477M","ra_key":"test","ra_api":"http://127.0.0.1:8765/API/","ra_media":"http://127.0.0.1:8765"'
           run ra-home "{\"platform\":\"retroachievements\",$ra}"

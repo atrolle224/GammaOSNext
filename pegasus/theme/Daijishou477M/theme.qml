@@ -16,9 +16,9 @@ FocusScope {
     readonly property var platforms: {
         var list = [{ kind: "ra", shortName: "retroachievements", name: "RetroAchievements", count: -1 }];
         for (var a = 0; a < api.collections.count; a++) {
-            if (api.collections.get(a).shortName === "Android") {
+            if (api.collections.get(a).shortName.toLowerCase() === "android") {
                 var apps = api.collections.get(a);
-                list.push({ kind: "apps", index: a, shortName: "Android", name: "Apps", count: apps.games.count });
+                list.push({ kind: "apps", index: a, shortName: "android", name: "Apps", count: apps.games.count });
             }
         }
         if (recentGames.count > 0)
@@ -28,7 +28,7 @@ FocusScope {
         var colls = [];
         for (var i = 0; i < api.collections.count; i++) {
             var c = api.collections.get(i);
-            if (c.shortName === "Android")
+            if (c.shortName.toLowerCase() === "android")
                 continue;
             colls.push({ kind: "collection", index: i, shortName: c.shortName, name: c.name, count: c.games.count });
         }
@@ -84,7 +84,7 @@ FocusScope {
             return;
         if (platform.kind === "apps") {
             inApps = true;
-            var at = api.memory.get("game:Android");
+            var at = api.memory.get("game:android");
             appsPage.open(at !== undefined ? at : 0);
             return;
         }
@@ -117,14 +117,14 @@ FocusScope {
         var app = gameAt(i);
         if (!app)
             return;
-        api.memory.set("platform", "Android");
-        api.memory.set("game:Android", i);
+        api.memory.set("platform", "android");
+        api.memory.set("game:android", i);
         api.memory.set("inList", true);
         app.launch();
     }
 
     function closeApps() {
-        api.memory.set("game:Android", appsPage.currentIndex);
+        api.memory.set("game:android", appsPage.currentIndex);
         inApps = false;
         carousel.forceActiveFocus();
     }
