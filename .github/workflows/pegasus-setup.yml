@@ -1,0 +1,123 @@
+name: Pegasus 477M setup
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'pegasus/**'
+      - '.github/workflows/pegasus-setup.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  # Runs the theme in the real Pegasus (its Linux build) at 1280x960 and keeps screenshots.
+  theme-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pegasus for Linux
+        run: |
+          set -e
+          sudo apt-get update -q
+          sudo apt-get install -y -q xvfb imagemagick xdotool libgl1-mesa-dri libegl1 libgl1 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxcb-xfixes0 libxcb-sync1 libxkbcommon-x11-0 \
+            libsdl2-2.0-0 libpulse0 libgstreamer-plugins-base1.0-0 libgstreamer1.0-0
+          git clone -q --depth 1 -b continuous-x11-static https://github.com/mmatyas/pegasus-deploy-staging peg
+          unzip -q peg/pegasus-fe_*_x11-static.zip -d peg/bin
+          ldd peg/bin/pegasus-fe | grep "not found" || true
+
+      - name: Test library
+        run: |
+          set -e
+          cfg=$RUNNER_TEMP/cfg/pegasus-frontend
+          lib=$RUNNER_TEMP/lib
+          mkdir -p $cfg/themes $cfg/metafiles
+          cp -r pegasus/theme/Daijishou477M $cfg/themes/
+          cp -r pegasus/metafiles/. $cfg/metafiles/
+          cp -r pegasus/ROMs $lib
+          printf 'general.theme: %s/themes/Daijishou477M/\ngeneral.fullscreen: true\n' "$cfg" > $cfg/settings.txt
+          echo "$lib" > $cfg/game_dirs.txt
+          art() {  # box art for a game: <system> <file> <colour>
+            d=$lib/$1/media/${2%.*}; mkdir -p "$d"
+            convert -size 300x420 "gradient:$3-black" -gravity center -pointsize 30 -fill white \
+              -annotate 0 "${2%.*}" "$d/boxFront.png"
+          }
+          for g in "Chrono Trigger" "Donkey Kong Country" "EarthBound" "F-Zero" "Super Mario World" \
+                   "Super Metroid" "The Legend of Zelda - A Link to the Past" "Yoshi's Island"; do
+            touch "$lib/snes/$g.sfc"; art snes "$g.sfc" "#6c5ba8"
+          done
+          for g in "Advance Wars" "Metroid Fusion" "Pokemon Emerald"; do touch "$lib/gba/$g.gba"; done
+          for g in "Crazy Taxi" "Shadow of the Colossus"; do touch "$lib/ps2/$g.iso"; done
+          touch "$lib/psvita/PCSE00120.psvita"
+          cat >> "$lib/metadata.pegasus.txt" <<'EOF'
+
+          game: Super Metroid
+          file: snes/Super Metroid.sfc
+          developer: Nintendo R&D1
+          release: 1994-03-19
+          players: 1
+          genre: Action, Adventure
+          description: Samus Aran returns to planet Zebes to recover the stolen Metroid larva. Explore a vast interconnected world, find new abilities, and face Mother Brain once more.
+          EOF
+          echo "CFG=$cfg" >> $GITHUB_ENV
+
+      - name: Screenshots
+        run: |
+          set -e
+          mkdir -p shots
+          run() {  # <name> <memory json> <keys...>
+            name=$1; mem=$2; shift 2
+            mkdir -p $CFG/theme_settings
+            if [ -n "$mem" ]; then echo "$mem" > $CFG/theme_settings/Daijishou477M.json
+            else rm -f $CFG/theme_settings/Daijishou477M.json; fi
+            XDG_CONFIG_HOME=$RUNNER_TEMP/cfg xvfb-run -a -s "-screen 0 1280x960x24" bash -c '
+              ./peg/bin/pegasus-fe & pid=$!
+              sleep 12
+              for k in "$@"; do xdotool key "$k"; sleep 1.5; done
+              import -window root "shots/'$name'.png"
+              kill $pid' _ "$@"
+            cp $CFG/lastrun.log "shots/$name.log"
+          }
+          run home ''
+          run home-next '' Right Right
+          run list '{"platform":"snes","inList":true,"game:snes":4}'
+          run list-favorite '{"platform":"snes","inList":true,"game:snes":5}' i Down
+          run back-home '{"platform":"snes","inList":true}' Escape
+          cat shots/home.log
+          if grep -h "\.qml:[0-9]" shots/*.log; then
+            echo "::error::QML errors in the theme"; exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pegasus-theme-screenshots
+          path: shots
+
+  bundle:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pegasus and Vita3K for Android
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          mkdir apks
+          git clone -q --depth 1 -b continuous-android64 https://github.com/mmatyas/pegasus-deploy-staging peg
+          cp peg/pegasus-fe_*_android64.apk apks/Pegasus.apk
+          gh release download -R Vita3K/Vita3K-Android -p '*.apk' -D vita
+          ls vita
+          cp "$(ls vita/*.apk | head -1)" apks/Vita3K.apk
+
+      - name: Setup folder
+        run: python3 pegasus/bundle.py "RG477M Pegasus setup" apks/*.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rg477m-pegasus-setup
+          path: RG477M Pegasus setup

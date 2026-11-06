@@ -1,0 +1,36 @@
+# The Android ports: each placeholder file in ports/ opens its app.
+
+collection: Ports
+shortname: ports
+directories: ports
+extensions: port
+
+game: Fallout
+file: ports/Fallout.port
+description: Fallout Community Edition. Put the Steam/GOG game files where the app asks on first start.
+launch: am start -p com.alexbatalov.falloutce.rg477m -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
+
+game: Fallout 2
+file: ports/Fallout 2.port
+description: Fallout 2 Community Edition. Put the Steam/GOG game files where the app asks on first start.
+launch: am start -p com.alexbatalov.fallout2ce.rg477m -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
+
+game: Perfect Dark
+file: ports/Perfect Dark.port
+description: The Perfect Dark PC port; it needs your own N64 ROM.
+launch: am start -p com.perfectdark.port.rg477m -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
+
+game: The Elder Scrolls III: Morrowind
+file: ports/The Elder Scrolls III Morrowind.port
+description: OpenMW 477M, with the Morrowind data files from your Steam/GOG copy.
+launch: am start -p com.ast.openmw.rg477m -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
+
+game: Ultima Online (UOAlive)
+file: ports/Ultima Online UOAlive.port
+description: MobileUO 477M set up for UOAlive, with controller play.
+launch: am start -p com.mobileuo.mobileuo.rg477m -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
+
+game: Old School RuneScape
+file: ports/Old School RuneScape.port
+description: The official Old School RuneScape app.
+launch: am start -p com.jagex.oldscape.android -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
