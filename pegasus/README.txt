@@ -91,3 +91,18 @@ APPS
    device as an icon grid: A opens one, X marks it a favourite, L1/R1 page.
    Pegasus reads the app list on its own; if the card is missing, turn on
    Start > Settings > Data sources > Android Apps.
+
+PHANTASY STAR ONLINE EPISODE I & II ON SCHTSERV
+   Dolphin 477M already starts PSO Episode I & II (US) with SCHTSERV's
+   Broadband Adapter (tapserver 3.18.217.27:9501) and a raw memory card.
+   1. Register your game's serial at https://api.schtserv.com/MyHL/ first.
+   2. In PSO: Options > Network Option > Provider Option > Yes. Create the
+      network file on the memory card, then Network Setup > pick a provider >
+      Edit Menu: "Automatically Obtain an IP Address", "Do not automatically
+      Disconnect", DNS Manual, primary 3.18.217.27, secondary blank. Leave the
+      proxy empty and save.
+   3. Choose Online on the title screen.
+   If you keep getting error 102: in Dolphin, long-press PSO > Edit Game
+   Settings > Cheats, turn on "SCHTSERV: fix error 102" for your version
+   (v1.00 or v1.01), and turn on Enable Cheats in Dolphin's settings.
+   Current server addresses are listed on schtserv.com.
