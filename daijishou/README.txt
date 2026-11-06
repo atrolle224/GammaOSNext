@@ -3,10 +3,17 @@ RG477M DAIJISHOU SETUP
 
 Daijishou with every emulator and port wired to the RG477M builds. No root needed.
 
+0. FIRST: THE CONTROLLER MODE
+   Pull down the drop-down bar and set the controller mode to Xbox (if it is
+   called Swap ABXY, turn the swap off). Everything here expects the Xbox
+   layout: A is the bottom face button. To check, open OSRS Pad 477M and press
+   the bottom face button: its controller test should say BUTTON_A (96).
+
 1. INSTALL THE APPS
    - Daijishou from the Play Store (it is free).
    - The APKs in the APKs folder you use. GameCube and Wii start Dolphin MMJR2
-     477M; Dolphin 477M is the second player there (it has RetroAchievements).
+     477M; Dolphin 477M is the second player there. Both have RetroAchievements
+     (MMJR2: Settings > Config > General > RetroAchievements Account).
 
 2. COPY THE FOLDERS
    - "Internal storage" goes to the root of internal storage (you get /RetroArch).
@@ -57,8 +64,11 @@ PHANTASY STAR ONLINE EPISODE I & II ON SCHTSERV
 MORROWIND WITH THE EXPANDED VANILLA MOD LIST
    On your PC, run RG477M-Morrowind.ps1 (GammaOSNext/ports/openmw). It makes
    C:\Morrowind477M\Morrowind Android and a zip of it; put that folder in the
-   RG477M's Internal storage\Documents. The Morrowind platform starts the game
-   directly with the list's load order.
+   RG477M's Internal storage\Documents (you get Documents/Morrowind Android with
+   Data Files and momw inside). In OpenMW 477M's settings keep "Use the
+   installed mod list" ticked. The Morrowind platform starts the game directly
+   with the list's load order and grass; the app uses its own handheld shadow
+   and shader settings instead of the list's PC ones (change them in the app).
 
 OLD SCHOOL RUNESCAPE WITH THE CONTROLLER (no root needed)
    1. Install Old School RuneScape from the Play Store, and OSRS-Pad-477M.apk.
