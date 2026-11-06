@@ -8,4 +8,6 @@ shortname: xbox
 ignore-regex: ^(?!.*/xbox/)
 extensions: iso, xiso, cci, cso
 launch: am start
-  -n com.rfandango.haku_x/.LauncherActivity -d {file.uri}
+  -n com.rfandango.haku_x.debug/com.rfandango.haku_x.LauncherActivity -d {file.uri}
+# the official hakuX instead:
+# am start -n com.rfandango.haku_x/.LauncherActivity -d {file.uri}
