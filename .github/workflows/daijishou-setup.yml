@@ -17,7 +17,7 @@ jobs:
         run: |
           set -e
           git clone -q --depth 1 --filter=blob:none --sparse https://github.com/TapiocaFox/Daijishou dj
-          git -C dj sparse-checkout set platforms
+          git -C dj sparse-checkout set platforms themes/platform_wallpapers_packs/EpicArtBookNoir
 
       - name: Platforms, ROM folders and RetroArch config
         run: |
@@ -30,6 +30,8 @@ jobs:
           rm -r "$out/work"
           cp -r pegasus/RetroArch "$out/Internal storage/RetroArch"
           find "$out" -name .keep -delete
+          python3 daijishou/wallpapers.py dj/themes/platform_wallpapers_packs/EpicArtBookNoir \
+            "$out/Daijishou wallpapers/EpicArtBookNoir" "$out/Daijishou platforms"
           cp daijishou/README.txt "$out/"
           cp ports/openmw/RG477M-Morrowind.ps1 "$out/"
 

@@ -32,8 +32,12 @@ Daijishou with every emulator and port wired to the RG477M builds. No root neede
    PlayStation: scph5501.bin).
 
 5. LOOK AND FEEL
-   - Wallpapers: Daijishou's wallpaper packs (in its settings) include
-     Epic ArtBook Noir.
+   - Wallpapers: Epic ArtBook Noir (by Jamesinorbit, from Daijishou's gallery).
+     In Daijishou's settings, open Wallpaper packs and download Epic ArtBook
+     Noir there; it matches the platforms by their short names, so every
+     imported platform gets its wallpaper. Offline, the same pack for these
+     platforms is in "Daijishou wallpapers/EpicArtBookNoir" (with its index.json)
+     to import from the device, or to set per platform.
    - RetroAchievements: sign in in Daijishou's settings, then add its
      RetroAchievements widgets on the Widgets page.
    - Your Android apps: Daijishou's Android platform.
