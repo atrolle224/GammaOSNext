@@ -149,6 +149,10 @@ jobs:
           done
           ls -la apks
 
+      # every app and activity the game lists start must be in the APKs, except the ones you install yourself
+      - name: Check the launch lines against the APKs
+        run: python3 pegasus/check_launch.py "$(ls $ANDROID_HOME/build-tools/*/aapt | tail -1)" apks/*.apk
+
       - name: Setup zip
         run: |
           python3 pegasus/bundle.py "RG477M Pegasus setup" apks/*.apk
