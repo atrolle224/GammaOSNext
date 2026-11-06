@@ -1,0 +1,70 @@
+name: Daijishou 477M setup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # the setup zip, as a draft release (only the owner sees it; it doesn't expire)
+  bundle:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Daijishou's own platform files
+        run: |
+          set -e
+          git clone -q --depth 1 --filter=blob:none --sparse https://github.com/TapiocaFox/Daijishou dj
+          git -C dj sparse-checkout set platforms
+
+      - name: Platforms, ROM folders and RetroArch config
+        run: |
+          set -e
+          out="RG477M Daijishou setup"
+          python3 daijishou/build.py dj/platforms "$out/work"
+          mv "$out/work/Platforms" "$out/Daijishou platforms"
+          mkdir -p "$out/SD card" "$out/Internal storage"
+          mv "$out/work/SD card/ROMs" "$out/SD card/ROMs"
+          rm -r "$out/work"
+          cp -r pegasus/RetroArch "$out/Internal storage/RetroArch"
+          find "$out" -name .keep -delete
+          cp daijishou/README.txt "$out/"
+          cp ports/openmw/RG477M-Morrowind.ps1 "$out/"
+
+      - name: The 477M builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          mkdir -p "RG477M Daijishou setup/APKs"
+          grep -v '^#' pegasus/apks.list | while read -r repo branch art apk; do
+            [ -n "$repo" ] || continue
+            id=$(gh api "repos/atrolle224/$repo/actions/artifacts?name=$art&per_page=50" --jq \
+              "[.artifacts[] | select(.expired == false and .workflow_run.head_branch == \"$branch\")][0].id // empty")
+            if [ -z "$id" ]; then echo "::warning::$repo $branch: no $art"; continue; fi
+            rm -rf dl && mkdir dl
+            gh api "repos/atrolle224/$repo/actions/artifacts/$id/zip" > dl/a.zip
+            unzip -q dl/a.zip -d dl
+            f=$(find dl -name '*.apk' | head -1)
+            if [ -z "$f" ]; then echo "::warning::$repo $art: no APK inside"; continue; fi
+            cp "$f" "RG477M Daijishou setup/APKs/$apk"
+            echo "$apk  <- $repo $branch artifact $id"
+          done
+          ls -la "RG477M Daijishou setup/APKs"
+
+      - name: Check the players against the APKs
+        run: |
+          python3 daijishou/check_launch.py "RG477M Daijishou setup/Daijishou platforms" \
+            "$(ls $ANDROID_HOME/build-tools/*/aapt | tail -1)" "RG477M Daijishou setup"/APKs/*.apk
+
+      - name: Setup zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          zip -q -r -X RG477M-Daijishou-setup.zip "RG477M Daijishou setup"
+          ls -la RG477M-Daijishou-setup.zip
+          tag=daijishou-setup-$(date -u +%Y%m%d-%H%M)
+          gh release create "$tag" --draft --target "$GITHUB_SHA" --title "RG477M Daijishou setup $(date -u +%Y-%m-%d)" \
+            --notes "Copy the zip to the RG477M and follow README.txt inside." RG477M-Daijishou-setup.zip
