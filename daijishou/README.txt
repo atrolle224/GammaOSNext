@@ -65,7 +65,7 @@ MORROWIND WITH THE EXPANDED VANILLA MOD LIST
    On your PC, run RG477M-Morrowind.ps1 (GammaOSNext/ports/openmw). It makes
    C:\Morrowind477M\Morrowind Android and a zip of it; put that folder in the
    RG477M's Internal storage\Documents (you get Documents/Morrowind Android with
-   Data Files and momw inside). In OpenMW 477M's settings keep "Use the
+   Data Files and momw inside). In OpenMW Mali Mobile's settings keep "Use the
    installed mod list" ticked. The Morrowind platform starts the game directly
    with the list's load order and grass; the app uses its own handheld shadow
    and shader settings instead of the list's PC ones (change them in the app).

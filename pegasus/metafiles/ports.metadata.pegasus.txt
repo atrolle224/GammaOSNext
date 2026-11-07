@@ -32,5 +32,5 @@ launch: am start -p com.jagex.oldscape.android -a android.intent.action.MAIN -c 
 
 game: The Elder Scrolls III: Morrowind
 file: ports/The Elder Scrolls III Morrowind.port
-description: OpenMW 477M with the Expanded Vanilla mod list, set up on your PC with RG477M-Morrowind.ps1.
+description: OpenMW Mali Mobile with the Expanded Vanilla mod list, set up on your PC with RG477M-Morrowind.ps1.
 launch: am start -p com.ast.openmw.rg477m -a android.intent.action.MAIN -c android.intent.category.LAUNCHER

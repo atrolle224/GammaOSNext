@@ -101,7 +101,7 @@ PORTS = [
     ("Perfect Dark", "Perfect Dark", "perfectdark477m", "com.perfectdark.port.rg477m/com.perfectdark.port.LauncherActivity", "",
      "The Perfect Dark port; pick your N64 ROM in its launcher once."),
     ("Morrowind", "The Elder Scrolls III: Morrowind", "openmw477m", "com.ast.openmw.rg477m/ui.activity.MainActivity",
-     "\n --ez rg477m.autostart true", "OpenMW 477M with the mod list from RG477M-Morrowind.ps1; starts the game directly."),
+     "\n --ez rg477m.autostart true", "OpenMW Mali Mobile with the mod list from RG477M-Morrowind.ps1; starts the game directly."),
     ("Ultima Online", "Ultima Online (UOAlive)", "ultimaonline477m", "com.mobileuo.mobileuo.rg477m/com.unity3d.player.UnityPlayerActivity", "",
      "MobileUO 477M set up for UOAlive, with controller play."),
     ("Old School RuneScape", "Old School RuneScape", "osrs477m", "com.rg477m.osrspad/com.rg477m.osrspad.PlayActivity", "",

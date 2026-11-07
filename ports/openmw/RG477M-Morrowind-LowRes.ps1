@@ -105,7 +105,7 @@ if (Test-Path $Temp) { Remove-Item $Temp -Recurse -Force }
 Write-Host "$done shrunk, $failed kept at full size (texconv could not read them)."
 Write-Host "Saved $([Math]::Round(($before - $after) / 1GB, 1)) GB."
 
-# OpenMW 477M reads this and then leaves its own texture shrinking off
+# OpenMW Mali Mobile reads this and then leaves its own texture shrinking off
 @(
     "Textures over $MaxSize pixels shrunk by RG477M-Morrowind-LowRes.ps1 on $(Get-Date -Format 'yyyy-MM-dd HH:mm')",
     "$done shrunk, $failed kept at full size, $skipped skipped"

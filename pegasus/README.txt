@@ -64,7 +64,7 @@ WHICH APP RUNS WHAT
    PlayStation 2: ARMSX2 Net                PSP: PPSSPP 477M
    Xbox: hakuX
    Saturn: Saturn.emu (your own copy)
-   Ports: Fallout CE, Fallout 2 CE, Perfect Dark, OpenMW 477M (Morrowind),
+   Ports: Fallout CE, Fallout 2 CE, Perfect Dark, OpenMW Mali Mobile (Morrowind),
      MobileUO 477M (UOAlive), Old School RuneScape (from the Play Store)
 
    To use a different app for a system (the official Dolphin, the ARMSX2 DNS
@@ -113,5 +113,5 @@ MORROWIND WITH THE EXPANDED VANILLA MOD LIST
    It downloads the mod list with umo (needs Nexus Premium for automatic
    downloads), sets the load order with momw-configurator and makes
    C:\Morrowind477M\Morrowind Android. Copy that folder to the RG477M's
-   Internal storage\Documents, then start OpenMW 477M: it finds the folder
+   Internal storage\Documents, then start OpenMW Mali Mobile: it finds the folder
    and uses the list's load order (Settings > Use the installed mod list).

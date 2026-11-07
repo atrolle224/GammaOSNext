@@ -1,10 +1,10 @@
 # RG477M-Morrowind.ps1: a modding-openmw.com mod list, installed and set up on this PC with
-# umo and momw-configurator, then turned into a "Morrowind Android" folder for OpenMW 477M:
+# umo and momw-configurator, then turned into a "Morrowind Android" folder for OpenMW Mali Mobile:
 #
 #   Morrowind Android\Data Files    the game's own files (from your Morrowind install)
 #   Morrowind Android\OpenMWMods    every mod of the list
 #   Morrowind Android\momw          openmw.cfg (load order, Android paths), settings.cfg,
-#                                   navmesh.db and list.txt, which OpenMW 477M reads
+#                                   navmesh.db and list.txt, which OpenMW Mali Mobile reads
 #
 # For Expanded Vanilla it builds the RG477M version: no menu or intro videos, no optional HD
 # texture folders, normal grass density, no volumetric clouds, and every texture over 1024
@@ -367,7 +367,7 @@ if (Test-Path $lowRes) {
 $sizeGb = [math]::Round(((Get-ChildItem $Out -Recurse -File | Measure-Object Length -Sum).Sum) / 1GB, 1)
 Step "Ready: $Out ($sizeGb GB)"
 Write-Host "Copy the whole 'Morrowind Android' folder to the RG477M's Internal storage\Documents"
-Write-Host "(a USB cable to the PC is the fastest way). Then start OpenMW 477M."
+Write-Host "(a USB cable to the PC is the fastest way). Then start OpenMW Mali Mobile."
 Step "Zipping (a while for $sizeGb GB)"
 $zipFile = Join-Path $Work "Morrowind Android.zip"
 Remove-Item -LiteralPath $zipFile -ErrorAction SilentlyContinue
