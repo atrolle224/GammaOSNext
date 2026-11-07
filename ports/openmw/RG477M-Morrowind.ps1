@@ -6,6 +6,10 @@
 #   Morrowind Android\momw          openmw.cfg (load order, Android paths), settings.cfg,
 #                                   navmesh.db and list.txt, which OpenMW 477M reads
 #
+# For Expanded Vanilla it builds the RG477M version: no menu or intro videos, no optional HD
+# texture folders, normal grass density, no volumetric clouds, and every texture over 1024
+# pixels shrunk (RG477M-Morrowind-LowRes.ps1, which must sit next to this script).
+#
 # Copy that folder to Internal storage\Documents on the RG477M (or unzip the zip there).
 #
 # Run it in PowerShell:
@@ -141,6 +145,45 @@ do {
 } while (-not $ok -and (Ask "Run umo again?"))
 if (-not $ok) { Fail "The list isn't fully installed; run this script again to resume." }
 
+# ---------------------------------------------------------------------------- the RG477M version of the list
+
+# momw-configurator applies these to the list (modding-openmw.com/tips/customizing-modlists):
+# the menu and intro videos, the optional HD texture folders (each mod keeps its normal
+# textures), thicker grass and volumetric clouds are left out for the handheld.
+$customizations = @'
+[[Customizations]]
+listName = 'expanded-vanilla'
+removeData = [
+  'VvardenfellAnimatedMainMenu\00 Animated Main Menu',
+  'HDIntroCinematicEnglish',
+  'OAABData\HD',
+  'Cutting Room Floor - High Resolution Textures',
+  'WhiteSuran2MDEdition\03 HD Textures',
+  'ImprovedBetterSkulls\02a Vanilla Textures 2x-4x Texture Size',
+  'OpenMWVanillaFriendlyAnimatedBasketEdit\01 HD Textures',
+  'MageRobes\04 HD Textures',
+  'OAABPomegranates\02 HD Textures',
+  'BeautifulCitiesofMorrowind\06 HD Textures',
+  'OAABGrazelands\03 HD Textures',
+  'OAABTelMora\02 HD Textures',
+  'ByAzura\01 High Res Textures',
+  'AlmalexiaRedone\HD',
+  'TheMananautsMessage\03 HD Textures',
+  'RedWisdomAnAshlanderProphecy\01 HD Textures',
+  'SecretsoftheCrystalCity\01 HD Textures',
+  'GreymarchDawnWhispersofJyggalag\01 HD Textures',
+  'TheSearchfortheWhiteWave\02 HD Textures',
+  'CalderaPrioryandtheDepthsofBloodandBone\HD',
+  'TempleMaster\04 HD Textures',
+  'ThePopularPlague\02 HD Textures',
+  'UpscaledJournalandBookmarkBGReplacement\01 2x Resolution Textures',
+  'GlowintheDahrk\01 Hi Res Window Texture Replacer',
+  'RemirosGroundcover\01b Thicker Grass OpenMW',
+  'MOMWPostProcessingPack\00 RecommendedConfig',
+  'MOMWPostProcessingPack\03 ZesterersVolumetricClouds',
+]
+'@
+
 # ---------------------------------------------------------------------------- momw-configurator: load order, settings, navmesh
 
 Step "momw-configurator: load order, settings and navmesh"
@@ -148,6 +191,12 @@ if (Test-Path $PcConfig) {
     $backup = Join-Path $Work ("pc-openmw-config-backup-" + (Get-Date -Format "yyyyMMdd-HHmmss"))
     Copy-Item $PcConfig $backup -Recurse
     Write-Host "Your PC's OpenMW settings were saved to $backup (the configurator replaces them)."
+}
+$customFile = Join-Path $PcConfig "momw-customizations.toml"
+if ($List -eq "expanded-vanilla") {
+    New-Item -ItemType Directory -Force $PcConfig | Out-Null
+    [IO.File]::WriteAllText($customFile, $customizations)
+    Write-Host "RG477M changes to the list: $customFile"
 }
 Write-Host "If it asks for paths, answer with:"
 Write-Host "  - openmw-iniimporter.exe:  $($importer.FullName)" -ForegroundColor Yellow
@@ -172,6 +221,9 @@ if (-not (Test-Path $pcCfg)) { Fail "momw-configurator wrote no $pcCfg." }
 $outFull = (Resolve-Path $Out).Path.TrimEnd('\')
 $vanillaPaths = @((Resolve-Path $dataFiles).Path.TrimEnd('\'), $vanilla.TrimEnd('\'))
 $extra = Join-Path $Momw "extra"
+# made again from the configurator's list each run, so folders it no longer uses go
+if (Test-Path $extra) { Remove-Item -LiteralPath $extra -Recurse -Force }
+Remove-Item -LiteralPath (Join-Path $Momw "lowres.txt") -ErrorAction SilentlyContinue
 $extraCount = 0
 $lines = New-Object System.Collections.Generic.List[string]
 $problems = New-Object System.Collections.Generic.List[string]
@@ -267,6 +319,16 @@ if ($problems.Count -gt 0) {
     Write-Host "Run this script again to resume umo; the list in momw\check.txt" -ForegroundColor Red
 } else {
     Write-Host "All folders and plugins present, in the configurator's order (momw\check.txt)." -ForegroundColor Green
+}
+
+# ---------------------------------------------------------------------------- handheld textures
+
+Step "Shrinking textures over 1024 pixels"
+$lowRes = Join-Path $PSScriptRoot "RG477M-Morrowind-LowRes.ps1"
+if (Test-Path $lowRes) {
+    & $lowRes -Work $Work -NoZip
+} else {
+    Write-Host "RG477M-Morrowind-LowRes.ps1 is not next to this script; textures stay full size." -ForegroundColor Yellow
 }
 
 # ---------------------------------------------------------------------------- done

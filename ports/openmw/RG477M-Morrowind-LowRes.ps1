@@ -13,7 +13,8 @@
 
 param(
     [string]$Work = "C:\Morrowind477M",
-    [int]$MaxSize = 1024
+    [int]$MaxSize = 1024,
+    [switch]$NoZip
 )
 
 $ErrorActionPreference = "Stop"
@@ -112,6 +113,7 @@ Write-Host "Saved $([Math]::Round(($before - $after) / 1GB, 1)) GB."
 
 # ---------------------------------------------------------------------------- zip
 
+if ($NoZip) { return }
 Step "Zipping"
 $zipFile = Join-Path $Work "Morrowind Android.zip"
 if (Test-Path $zipFile) { Remove-Item $zipFile -Force }
