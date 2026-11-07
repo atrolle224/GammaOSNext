@@ -21,7 +21,8 @@ param(
     [string]$Morrowind = "C:\Program Files (x86)\Steam\steamapps\common\Morrowind",
     [string]$List = "expanded-vanilla",
     [string]$ListName = "Expanded Vanilla",
-    [string]$Android = "/storage/emulated/0/Documents/Morrowind Android"
+    [string]$Android = "/storage/emulated/0/Documents/Morrowind Android",
+    [switch]$KeepStartingSkills
 )
 
 $ErrorActionPreference = "Stop"
@@ -368,6 +369,68 @@ if ($problems.Count -gt 0) {
     Write-Host "Run this script again to resume umo; the list in momw\check.txt" -ForegroundColor Red
 } else {
     Write-Host "All folders and plugins present, in the configurator's order (momw\check.txt)." -ForegroundColor Green
+}
+
+# ---------------------------------------------------------------------------- RG477M additions
+
+if (-not $KeepStartingSkills) {
+    Step "Adding Skills Start At One"
+    # mods/SkillsStartAtOne in GammaOSNext; last in the load order so nothing resets it
+    $skillsMod = Join-Path $Mods "SkillsStartAtOne"
+    New-Item -ItemType Directory -Force (Join-Path $skillsMod "scripts\SkillsStartAtOne") | Out-Null
+    [IO.File]::WriteAllText((Join-Path $skillsMod "SkillsStartAtOne.omwscripts"), "PLAYER: scripts/SkillsStartAtOne/player.lua`n")
+    [IO.File]::WriteAllText((Join-Path $skillsMod "scripts\SkillsStartAtOne\player.lua"), @'
+-- Skills Start At One (RG477M): when a new character finishes character creation (class,
+-- birthsign and the census office), every skill is set to 1. Characters that were past
+-- character creation before this mod was added are left alone.
+
+local self = require('openmw.self')
+local types = require('openmw.types')
+local core = require('openmw.core')
+local ui = require('openmw.ui')
+
+-- seen during character creation: the next finished state is this character's start
+local inCharGen = false
+local done = false
+
+local function setSkillsToOne()
+    for _, skill in pairs(core.stats.Skill.records) do
+        local stat = types.NPC.stats.skills[skill.id](self)
+        stat.base = 1
+        stat.progress = 0
+    end
+    done = true
+    ui.showMessage('Every skill starts at 1.')
+end
+
+return {
+    engineHandlers = {
+        onUpdate = function()
+            if done then
+                return
+            end
+            if not types.Player.isCharGenFinished(self) then
+                inCharGen = true
+            elseif inCharGen then
+                setSkillsToOne()
+            end
+        end,
+        onSave = function()
+            return { inCharGen = inCharGen, done = done }
+        end,
+        onLoad = function(data)
+            if data then
+                inCharGen = data.inCharGen
+                done = data.done
+            end
+        end,
+    },
+}
+'@)
+    $lines.Add('data="' + (To-Android $skillsMod) + '"')
+    $lines.Add("content=SkillsStartAtOne.omwscripts")
+    [IO.File]::WriteAllLines((Join-Path $Momw "openmw.cfg"), $lines)
+    Write-Host "New characters get every skill at 1 after character creation (-KeepStartingSkills leaves it out)."
 }
 
 # ---------------------------------------------------------------------------- handheld textures
