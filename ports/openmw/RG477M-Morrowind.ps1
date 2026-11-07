@@ -149,7 +149,9 @@ if (-not $ok) { Fail "The list isn't fully installed; run this script again to r
 
 # momw-configurator applies these to the list (modding-openmw.com/tips/customizing-modlists):
 # the menu and intro videos, the optional HD texture folders (each mod keeps its normal
-# textures), thicker grass and volumetric clouds are left out for the handheld.
+# textures), thicker grass and volumetric clouds are left out for the handheld. Water, swamps
+# and skies stay vanilla: scum moved onto the water plane and the reshaped Seyda Neen pools
+# flicker on the RG477M's GPU.
 $customizations = @'
 [[Customizations]]
 listName = 'expanded-vanilla'
@@ -181,6 +183,21 @@ removeData = [
   'RemirosGroundcover\01b Thicker Grass OpenMW',
   'MOMWPostProcessingPack\00 RecommendedConfig',
   'MOMWPostProcessingPack\03 ZesterersVolumetricClouds',
+  'PerfectScum',
+  'MOMWPatches\23 Little Landscapes Seyda Neen Swamp Pools Patched',
+  'BetterWaterfalls\00 Core',
+  'BetterWaterfalls\02 Tamriel Rebuilt Water',
+  'OpenMWMoreDynamicWaterMeshes',
+  'SkiesIV\Skies - .IV',
+  'SkiesIV\Particles',
+  'NewStarfields\00 Core',
+  'NewStarfields\01 Option 7 (100% Opacity)',
+  'DyingWorldsmoonsretexture\Data Files',
+  'SophiasClearBlueSkies',
+]
+removeContent = [
+  'PR Perfect Scum.esp',
+  'Little Landscapes - Seyda Neen Swamp Pools.ESP',
 ]
 '@
 
