@@ -1,0 +1,32 @@
+name: MOMW list data
+
+# A mod list's data from modding-openmw.com's API (what umo installs from), as a draft release,
+# for working out the RG477M handheld customizations.
+on:
+  workflow_dispatch:
+    inputs:
+      list:
+        description: Mod list slug
+        default: expanded-vanilla
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fetch
+        env:
+          LIST: ${{ inputs.list }}
+        run: |
+          set -e
+          curl -fsS -A "RG477M-setup" "https://modding-openmw.com/api/lists/$LIST" -o "$LIST.json"
+          python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(type(d).__name__, len(d))" "$LIST.json"
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LIST: ${{ inputs.list }}
+        run: |
+          tag=momw-$LIST-$(date -u +%Y%m%d-%H%M)
+          gh release create "$tag" -R "$GITHUB_REPOSITORY" --draft --title "$tag" --notes "modding-openmw.com API data" "$LIST.json"
