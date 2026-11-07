@@ -33,7 +33,7 @@ jobs:
           python3 daijishou/wallpapers.py dj/themes/platform_wallpapers_packs/EpicArtBookNoir \
             "$out/Daijishou wallpapers/EpicArtBookNoir" "$out/Daijishou platforms"
           cp daijishou/README.txt "$out/"
-          cp ports/openmw/RG477M-Morrowind.ps1 "$out/"
+          cp ports/openmw/RG477M-Morrowind.ps1 ports/openmw/RG477M-Morrowind-LowRes.ps1 "$out/"
 
       - name: The 477M builds
         env:
