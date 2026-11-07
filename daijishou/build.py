@@ -58,7 +58,8 @@ SETUP = {
     "SegaGameGear.json": ("gamegear", [retroarch("gamegear", "genesis_plus_gx", "Genesis Plus GX")]),
     "SegaCD.json": ("segacd", [retroarch("segacd", "genesis_plus_gx", "Genesis Plus GX")]),
     "NeoGeoPocketColor.json": ("ngpc", [retroarch("ngpc", "mednafen_ngp", "Beetle NeoPop")]),
-    "SonyPlayStation.json": ("psx", [retroarch("psx", "pcsx_rearmed", "PCSX ReARMed")]),
+    "SonyPlayStation.json": ("psx", [retroarch("psx", "swanstation", "SwanStation"),
+                                     retroarch("psx", "pcsx_rearmed", "PCSX ReARMed")]),
     "Nintendo64.json": ("n64", [
         ("n64.rg477m.m64plusfz", "n64 - M64Plus FZ 477M", "M64Plus FZ 477M (org.mupen64plusae.v3.fzurita.rg477m).",
          "-n org.mupen64plusae.v3.fzurita.rg477m/paulscode.android.mupen64plusae.SplashActivity\n"

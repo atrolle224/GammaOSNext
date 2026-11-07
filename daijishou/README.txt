@@ -32,7 +32,7 @@ Daijishou with every emulator and port wired to the RG477M builds. No root neede
 4. RETROARCH 477M
    Start one RetroArch game from Daijishou, then in RetroArch:
    - Main Menu > Online Updater > Core Downloader: gambatte, mgba, fceumm,
-     snes9x, genesis_plus_gx, mednafen_ngp, pcsx_rearmed.
+     snes9x, genesis_plus_gx, mednafen_ngp, swanstation, pcsx_rearmed.
    - Settings > Achievements > sign in to RetroAchievements (it is already on).
    RetroArch games from Daijishou use /RetroArch/retroarch.cfg, with the RG477M
    controller profile; BIOS files go in /RetroArch/system (Sega CD: bios_CD_U.bin;
@@ -76,3 +76,14 @@ OLD SCHOOL RUNESCAPE WITH THE CONTROLLER (no root needed)
       it's a restricted setting: OSRS Pad 477M > App info > the ⋮ menu (top right)
       > Allow restricted settings, then turn it on again.
    3. Start Old School RuneScape from the Ports. Start shows the controls.
+
+PLAYSTATION
+   PlayStation starts RetroArch 477M with SwanStation, the open-source branch of
+   DuckStation's emulator, already set up for the RG477M: 4x resolution (sharp at
+   1280x960), PGXP geometry and texture correction, true colour, fast boot, the
+   controller profile and RetroAchievements. Its options are in
+   /RetroArch/config/SwanStation/SwanStation.opt (Quick Menu > Core Options).
+   It needs a PlayStation BIOS, e.g. scph5501.bin, in /RetroArch/system.
+   The DuckStation app itself (Play Store) is the third player: hold the game in
+   Daijishou to pick it. DuckStation is not open source any more, so it is used
+   as it is; sign in to RetroAchievements in its Settings > Achievements.
