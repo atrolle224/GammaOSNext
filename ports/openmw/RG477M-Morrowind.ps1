@@ -211,6 +211,20 @@ if (Test-Path $PcConfig) {
 }
 $customFile = Join-Path $PcConfig "momw-customizations.toml"
 if ($List -eq "expanded-vanilla") {
+    # mods that renamed a folder after the list was written: point the list at the new one
+    $renamed = @{
+        'OAABGrazelands\01 Remiros Groundcover GL Patch for Trackless Grazelands' = 'OAABGrazelands\04 Remiros Groundcover GL Patch for Trackless Grazelands'
+    }
+    foreach ($old in $renamed.Keys) {
+        $new = Get-ChildItem $Mods, (Join-Path $Tools $List) -Directory -Recurse -Depth 3 -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName.EndsWith("\" + $renamed[$old]) } | Select-Object -First 1
+        $oldThere = Get-ChildItem $Mods, (Join-Path $Tools $List) -Directory -Recurse -Depth 3 -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName.EndsWith("\" + $old) } | Select-Object -First 1
+        if ($new -and -not $oldThere) {
+            $customizations += "`n[[Customizations.replace]]`nsource = '''$old'''`ndest = '''$($new.FullName)'''`n"
+            Write-Host "  $old is now $($new.FullName)"
+        }
+    }
     New-Item -ItemType Directory -Force $PcConfig | Out-Null
     [IO.File]::WriteAllText($customFile, $customizations)
     Write-Host "RG477M changes to the list: $customFile"
