@@ -194,12 +194,16 @@ function To-Android([string]$path) {
     return "$Android/momw/extra/$name"
 }
 
+# menu and intro video replacers: their Bink videos don't play in OpenMW for Android
+$leftOut = @("00 Animated Main Menu", "HDIntroCinematicEnglish")
+
 foreach ($raw in Get-Content $pcCfg) {
     $line = $raw.Trim()
     if ($line -notmatch '^(data|content|groundcover|fallback-archive)\s*=\s*(.*)$') { continue }
     $key = $Matches[1]; $value = $Matches[2].Trim()
     if ($key -eq "data") {
         $path = $value.Trim('"').Replace('&&', '&')
+        if ($leftOut -contains (Split-Path $path -Leaf)) { Write-Host "  left out $path"; continue }
         if (-not (Test-Path $path)) { $problems.Add("missing mod folder: $path"); continue }
         $pcData.Add($path)
         $value = '"' + (To-Android $path).Replace('&', '&&') + '"'
