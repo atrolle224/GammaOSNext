@@ -211,20 +211,6 @@ if (Test-Path $PcConfig) {
 }
 $customFile = Join-Path $PcConfig "momw-customizations.toml"
 if ($List -eq "expanded-vanilla") {
-    # mods that renamed a folder after the list was written: point the list at the new one
-    $renamed = @{
-        'OAABGrazelands\01 Remiros Groundcover GL Patch for Trackless Grazelands' = 'OAABGrazelands\04 Remiros Groundcover GL Patch for Trackless Grazelands'
-    }
-    foreach ($old in $renamed.Keys) {
-        $new = Get-ChildItem $Mods, (Join-Path $Tools $List) -Directory -Recurse -Depth 3 -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName.EndsWith("\" + $renamed[$old]) } | Select-Object -First 1
-        $oldThere = Get-ChildItem $Mods, (Join-Path $Tools $List) -Directory -Recurse -Depth 3 -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName.EndsWith("\" + $old) } | Select-Object -First 1
-        if ($new -and -not $oldThere) {
-            $customizations += "`n[[Customizations.replace]]`nsource = '''$old'''`ndest = '''$($new.FullName)'''`n"
-            Write-Host "  $old is now $($new.FullName)"
-        }
-    }
     New-Item -ItemType Directory -Force $PcConfig | Out-Null
     [IO.File]::WriteAllText($customFile, $customizations)
     Write-Host "RG477M changes to the list: $customFile"
@@ -235,12 +221,25 @@ Write-Host "  - openmw-navmeshtool.exe:  $navmeshtool" -ForegroundColor Yellow
 Write-Host "  - Morrowind.ini:           $(Join-Path $Morrowind 'Morrowind.ini')" -ForegroundColor Yellow
 Write-Host "  - Morrowind install:       $Morrowind" -ForegroundColor Yellow
 Write-Host "The navmesh step can take 30 minutes or more."
+$configStart = Get-Date
 & $configurator.FullName config --verbose --run-navmeshtool --run-validator $List
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "momw-configurator stopped ($LASTEXITCODE)." -ForegroundColor Yellow
-    if (-not (Ask "Try again without the navmesh step?")) { exit 1 }
-    & $configurator.FullName config --verbose --run-validator $List
-    if ($LASTEXITCODE -ne 0) { Fail "momw-configurator failed ($LASTEXITCODE)." }
+    $pcCfgFile = Get-Item (Join-Path $PcConfig "openmw.cfg") -ErrorAction SilentlyContinue
+    $validatorLog = Get-ChildItem $PcConfig -Filter "validator-*.log" -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime | Select-Object -Last 1
+    if ($validatorLog) { Copy-Item $validatorLog.FullName (Join-Path $Momw "validator.log") -Force }
+    if ($pcCfgFile -and $pcCfgFile.LastWriteTime -gt $configStart) {
+        # the load order and navmesh are written before the validator runs; a mod that renamed
+        # a folder since the list was written trips it, and the conversion below finds those
+        Write-Host "The validator found problems (momw\validator.log); the checks below repair what they can." -ForegroundColor Yellow
+    } else {
+        Write-Host "momw-configurator stopped ($LASTEXITCODE)." -ForegroundColor Yellow
+        if (-not (Ask "Try again without the navmesh step?")) { exit 1 }
+        & $configurator.FullName config --verbose --run-validator $List
+        if ($LASTEXITCODE -ne 0 -and -not ((Get-Item (Join-Path $PcConfig "openmw.cfg") -ErrorAction SilentlyContinue).LastWriteTime -gt $configStart)) {
+            Fail "momw-configurator failed ($LASTEXITCODE)."
+        }
+    }
 }
 
 # ---------------------------------------------------------------------------- the Android copy of the configuration
@@ -277,6 +276,18 @@ function To-Android([string]$path) {
     return "$Android/momw/extra/$name"
 }
 
+# A mod updated after the list was written may have renumbered a folder ("01 Patch" is now
+# "04 Patch"): the folder next to it with the same name after the number is the one.
+function Find-Renamed([string]$path) {
+    $parent = Split-Path $path -Parent
+    if (-not (Test-Path -LiteralPath $parent)) { return $null }
+    $name = (Split-Path $path -Leaf) -replace '^\d+\s+', ''
+    $same = @(Get-ChildItem -LiteralPath $parent -Directory | Where-Object { ($_.Name -replace '^\d+\s+', '') -ieq $name })
+    if ($same.Count -eq 1) { return $same[0].FullName }
+    return $null
+}
+$renamedNotes = New-Object System.Collections.Generic.List[string]
+
 # menu and intro video replacers: their Bink videos don't play in OpenMW for Android
 $leftOut = @("00 Animated Main Menu", "HDIntroCinematicEnglish")
 
@@ -287,7 +298,13 @@ foreach ($raw in Get-Content $pcCfg) {
     if ($key -eq "data") {
         $path = $value.Trim('"').Replace('&&', '&')
         if ($leftOut -contains (Split-Path $path -Leaf)) { Write-Host "  left out $path"; continue }
-        if (-not (Test-Path $path)) { $problems.Add("missing mod folder: $path"); continue }
+        if (-not (Test-Path -LiteralPath $path)) {
+            $renamedTo = Find-Renamed $path
+            if (-not $renamedTo) { $problems.Add("missing mod folder: $path"); continue }
+            $renamedNotes.Add("renamed by its mod: $path -> $renamedTo")
+            Write-Host "  $path is now $renamedTo"
+            $path = $renamedTo
+        }
         $pcData.Add($path)
         $value = '"' + (To-Android $path).Replace('&', '&&') + '"'
     }
@@ -343,6 +360,7 @@ $report = @(
     "",
     "Load order:"
 ) + ($lines | Where-Object { $_ -match '^(content|groundcover|fallback-archive)=' })
+if ($renamedNotes.Count -gt 0) { $report = $renamedNotes + @("") + $report }
 if ($problems.Count -gt 0) { $report = @("PROBLEMS:") + $problems + @("") + $report }
 [IO.File]::WriteAllLines((Join-Path $Momw "check.txt"), $report)
 if ($problems.Count -gt 0) {
