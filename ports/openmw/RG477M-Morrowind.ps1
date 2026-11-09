@@ -150,26 +150,27 @@ if (-not $ok) { Fail "The list isn't fully installed; run this script again to r
 
 # Mods and patches the list doesn't download (patches found by lists/nexus_patch_scan.py),
 # fetched from Nexus with the API key umo setup saved (Premium download links), unpacked into
-# Extra, which the conversion loads after the list in name order. A download with several
-# versions inside gets an rg477m.txt naming the folders and plugins to use.
+# Extra, which the conversion loads after the list in name order. Pick is for downloads with
+# several versions inside: it becomes the folder's rg477m.txt, the folders and plugins to use
+# (the core folder first, then the version matching BCOM and the list's other mods).
 $extraMods = @(
-    @{ Name = "10 TMR Patch for OAAB Tel Mora"; Mod = 52278; File = 1000054494 },
+    @{ Name = "10 TMR Patch for OAAB Tel Mora"; Mod = 52278; File = 1000054494; Pick = @('data=TMR - OAAB TM Patch', 'content=TMR - OAAB TM Patch.ESP') },
     # heads, hair and body proportions; the rigged hairstyles are the OpenMW edition
-    @{ Name = "20 Redguard Customization Expansion"; Mod = 52477; File = 1000039404 },
+    @{ Name = "20 Redguard Customization Expansion"; Mod = 52477; File = 1000039404; Pick = @('data=Data Files', 'content=RedguardCustomizationExpansion.ESP') },
     @{ Name = "21 Ways Better Hairstyles Rigged Edition"; Mod = 60193; File = 1000073779 },
-    @{ Name = "22 Height and Weight"; Mod = 51844; File = 1000050299 },
+    @{ Name = "22 Height and Weight"; Mod = 51844; File = 1000050299; Pick = @('data=.', 'content=Height & Weight.ESP') },
     # Interesting Outfits and TipsyTekPriest's Tamriel_Data placements
-    @{ Name = "30 Interesting Outfits - Kinsmer"; Mod = 52167; File = 1000070129 },
-    @{ Name = "31 Interesting Outfits - Imperials"; Mod = 53651; File = 1000070078 },
+    @{ Name = "30 Interesting Outfits - Kinsmer"; Mod = 52167; File = 1000070129; Pick = @('data=1. Core', 'data=2. BCOM Compatibility', 'content=IO - Kinsmer.ESP', 'content=IO - Vivec Palace Armigers (Helmed).ESP') },
+    @{ Name = "31 Interesting Outfits - Imperials"; Mod = 53651; File = 1000070078; Pick = @('data=1. Core', 'data=2. BCOM Compatibility', 'content=IO - Imperials.ESP') },
     @{ Name = "32 Interesting Outfits - Ashlanders"; Mod = 54099; File = 1000071959 },
-    @{ Name = "33 Interesting Outfits - Cultists"; Mod = 51922; File = 1000071374 },
+    @{ Name = "33 Interesting Outfits - Cultists"; Mod = 51922; File = 1000071374; Pick = @('data=1. Core', 'data=2. DSO Compatibility Version', 'content=IO - Cultists.ESP') },
     @{ Name = "34 Interesting Outfits - Tamriel Rebuilt Guards"; Mod = 55776; File = 1000071961 },
     @{ Name = "35 Interesting Outfits - SHOTN Guards"; Mod = 56803; File = 1000070882 },
     @{ Name = "36 Interesting Outfits - Project Cyrodiil Guards"; Mod = 56804; File = 1000070812 },
-    @{ Name = "37 Watchmen on Vvardenfell"; Mod = 52585; File = 1000053714 },
-    @{ Name = "38 PTR Weapons and Armor on Vvardenfell"; Mod = 53686; File = 1000056585 },
-    @{ Name = "39 PTR Tapestries and EEC assets on Vvardenfell"; Mod = 55991; File = 1000057649 },
-    @{ Name = "40 TR Newspaper Spawns on Vvardenfell"; Mod = 56788; File = 1000054149 },
+    @{ Name = "37 Watchmen on Vvardenfell"; Mod = 52585; File = 1000053714; Pick = @('data=1. Core', 'data=4. BCOM + Repopulated MW', 'content=Watchmen on Vvardenfell.ESP') },
+    @{ Name = "38 PTR Weapons and Armor on Vvardenfell"; Mod = 53686; File = 1000056585; Pick = @('data=1. Core', 'data=6. OAAB T&T + BCOM + Concept Art Husk Urshilaku', 'content=PTR Weapons & Armor on VV.ESP') },
+    @{ Name = "39 PTR Tapestries and EEC assets on Vvardenfell"; Mod = 55991; File = 1000057649; Pick = @('data=1. Core', 'data=2. BCOM Compatibility', 'content=PTR Tapestries & EEC on VV.ESP') },
+    @{ Name = "40 TR Newspaper Spawns on Vvardenfell"; Mod = 56788; File = 1000054149; Pick = @('data=1. Core', 'data=2. BCOM version', 'content=TR Newspaper Spawns on Vvardenfell.ESP') },
     # weather chances only (a script); Devilish Snow and Ash are shader effects, left out
     @{ Name = "50 Devilish Regional Weather"; Mod = 60856; File = 1000073583 }
 )
@@ -185,6 +186,55 @@ function Get-NexusKey {
     return $null
 }
 
+# Devilish Regional Weather's northern snow climate covers everything north of a line, which
+# would snow on northern Vvardenfell and Tamriel Rebuilt too; this keeps it to Skyrim: Home of
+# the Nords' regions (each region can still be switched in Options > Scripts).
+function Set-SkyrimSnow($file) {
+    if (-not (Test-Path -LiteralPath $file)) { return }
+    $text = [IO.File]::ReadAllText($file)
+    if ($text.Contains("SKYRIM_REGIONS")) { return }
+    $text = $text.Replace("`r`n", "`n")
+    $pairs = @(
+        @(@'
+local function climateActiveFor(section)
+    return section and section:get('UseClimate') ~= false
+       and (snowSettings.enabled or ashSettings.enabled)
+end
+'@, @'
+-- RG477M: the northward snow climate only in Skyrim (Skyrim: Home of the Nords' regions);
+-- elsewhere each region keeps its own weather unless "Allow climate rules here" is turned on.
+local SKYRIM_REGIONS = { 'druadach', 'lorchwuir', 'vorndgad', 'kilkreath', 'sundered', 'midkarth',
+    'falkheim', 'reach', 'skyrim', 'karth', 'jerall', 'velothi mountains', 'solitude', 'haafingar' }
+local climateDefault = {}
+
+local function isSkyrimRegion(region)
+    local text = string.lower((region.name or '') .. ' ' .. (region.id or ''))
+    for _, word in ipairs(SKYRIM_REGIONS) do
+        if string.find(text, word, 1, true) then return true end
+    end
+    return false
+end
+
+local function climateActiveFor(section, id)
+    if not section then return false end
+    local use = section:get('UseClimate')
+    if use == nil then use = climateDefault[id] == true end
+    return use and (snowSettings.enabled or ashSettings.enabled)
+end
+'@),
+        @("        local entries = {", "        climateDefault[id] = isSkyrimRegion(region)`n        local entries = {"),
+        @("name = 'Allow climate rules here', default = true,", "name = 'Allow climate rules here', default = climateDefault[id],"),
+        @("climateActiveFor(sections[id])", "climateActiveFor(sections[id], id)")
+    )
+    foreach ($pair in $pairs) {
+        $old = $pair[0].Replace("`r`n", "`n").TrimEnd("`n"); $new = $pair[1].Replace("`r`n", "`n").TrimEnd("`n")
+        if (-not $text.Contains($old)) { Write-Host "  Devilish Regional Weather changed; its snow is left as it was." -ForegroundColor Yellow; return }
+        $text = $text.Replace($old, $new)
+    }
+    [IO.File]::WriteAllText($file, $text)
+    Write-Host "  Devilish Regional Weather: snow climate in Skyrim only"
+}
+
 if ($List -eq "expanded-vanilla") {
     Step "Mods and patches the list doesn't download"
     $nexusKey = Get-NexusKey
@@ -196,8 +246,8 @@ if ($List -eq "expanded-vanilla") {
     foreach ($extraMod in $extraMods) {
         if (-not $nexusKey) { break }
         $target = Join-Path (Join-Path $Work "Extra") $extraMod.Name
-        if (Test-Path $target) { Write-Host "  $($extraMod.Name): already in Extra"; continue }
-        try {
+        if (Test-Path $target) { Write-Host "  $($extraMod.Name): already in Extra" }
+        else { try {
             $api = "https://api.nexusmods.com/v1/games/morrowind/mods/$($extraMod.Mod)/files/$($extraMod.File)"
             $info = Invoke-RestMethod "$api.json" -Headers $headers
             $archive = Join-Path $archives $info.file_name
@@ -215,8 +265,12 @@ if ($List -eq "expanded-vanilla") {
         } catch {
             Remove-Item -LiteralPath $target -Recurse -Force -ErrorAction SilentlyContinue
             Write-Host "  $($extraMod.Name) failed: $($_.Exception.Message)" -ForegroundColor Yellow
+        } }
+        if ((Test-Path $target) -and $extraMod.Pick) {
+            [IO.File]::WriteAllLines((Join-Path $target "rg477m.txt"), [string[]]$extraMod.Pick)
         }
     }
+    Set-SkyrimSnow (Join-Path $Work "Extra\50 Devilish Regional Weather\scripts\DevilishRegionalWeather\global.lua")
 }
 
 # ---------------------------------------------------------------------------- the RG477M version of the list
