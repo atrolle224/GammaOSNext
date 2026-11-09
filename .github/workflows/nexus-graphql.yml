@@ -1,0 +1,29 @@
+name: Nexus GraphQL
+
+# Runs one query against Nexus' public GraphQL API and prints the answer, for looking up mods
+# while putting together the RG477M Morrowind list.
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: GraphQL query
+        required: true
+
+jobs:
+  query:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Query
+        env:
+          QUERY: ${{ inputs.query }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          req = urllib.request.Request("https://api.nexusmods.com/v2/graphql",
+              json.dumps({"query": os.environ["QUERY"]}).encode(),
+              {"Content-Type": "application/json", "User-Agent": "RG477M-setup"})
+          try:
+              print(json.dumps(json.load(urllib.request.urlopen(req, timeout=60)), indent=1))
+          except urllib.error.HTTPError as e:
+              print(e.code, e.read().decode()[:3000])
+          PY
