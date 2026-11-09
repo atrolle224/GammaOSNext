@@ -17,6 +17,22 @@ KEEP = {
     # what that content needs or plays better with
     "FirstSteps", "OfficialPlugins", "PatchesFixesandConsistency", "ModdingResources",
     "CutContent", "MeshReplacers", "ModPatches", "Tools",
+    # suggested: indoor content and music cost little while playing
+    "CavesandDungeons", "Interiors", "Randomizers", "Music",
+}
+
+# suggested from categories otherwise left out: small outdoor additions (big regional overhauls
+# would slow the open world), homes, sounds and controller-friendly conveniences
+KEEP_MODS = {
+    "Uvirith's Legacy", "Building Up Uvirith's Legacy", "Draggle-Tail Shack", "The Popular Plague",
+    "Little Landscapes - Bitter Coast Waterway", "Little Landscapes - Path to Pelagiad",
+    "Little Landscapes - Path to Vivec Lighthouse", "Little Landscape - Path to Balmora",
+    "Little Landscape - Foyada of Sharp Teeth", "OAAB Shipwrecks", "Hidden Sea Loot",
+    "Justice for Khartag (J.F.K.)", "Holamayan Island", "Telvanni Sea Beacons", "Sanctus Shrine",
+    "Strider Burial", "Immersive Grotto Entrances", "OAAB - Foyada Mamaea", "Gates of Ascadia",
+    "Store Entrance Chimes", "Store Entrance Chimes for Cyrodiil and TR Mainland", "MAO Spell Sounds",
+    "Friendly Autosave", "Graphic Herbalism - MWSE and OpenMW Edition", "Expansions Integrated",
+    "Clear Your Name", "Improved Inns Expanded", "Wares Ultimate", "Signpost Fast Travel",
 }
 
 # kept mods, but not on the handheld
@@ -36,18 +52,28 @@ DROP_PATHS = [
     "CalderaPrioryandtheDepthsofBloodandBone/HD",
     "TempleMaster/04 HD Textures",
     "MageRobes/04 HD Textures",
+    "ThePopularPlague/02 HD Textures",
     "RemirosGroundcover/01b Thicker Grass OpenMW",
     "MOMWPatches/23 Little Landscapes Seyda Neen Swamp Pools Patched",
 ]
 DROP_PLUGINS = ["Little Landscapes - Seyda Neen Swamp Pools.ESP"]
 
 mods = json.load(open(sys.argv[1], encoding="utf-8"))
-kept_paths = [f"{m['category']}/{p}" for m in mods if m["category"] in KEEP for p in m["data_paths"]]
-kept_plugins = {p.lower() for m in mods if m["category"] in KEEP for p in m["plugins"]}
+missing = KEEP_MODS - {m["name"] for m in mods}
+if missing:
+    sys.exit(f"not on the list: {sorted(missing)}")
+
+
+def kept(m):
+    return m["category"] in KEEP or m["name"] in KEEP_MODS
+
+
+kept_paths = [f"{m['category']}/{p}" for m in mods if kept(m) for p in m["data_paths"]]
+kept_plugins = {p.lower() for m in mods if kept(m) for p in m["plugins"]}
 
 remove_paths, remove_plugins = [], []
 for m in mods:
-    if m["category"] in KEEP:
+    if kept(m):
         continue
     for p in m["data_paths"]:
         path = f"{m['category']}/{p}"
@@ -71,6 +97,6 @@ with open(sys.argv[2], "w", encoding="utf-8", newline="\n") as f:
     f.write(f"removeData = [\n{toml_list(remove_paths)}\n]\n")
     f.write(f"removeContent = [\n{toml_list(remove_plugins)}\n]\n")
 
-kept = [m for m in mods if m["category"] in KEEP]
-print(f"{len(kept)} mods kept, {len(mods) - len(kept)} removed: "
+kept_mods = [m for m in mods if kept(m)]
+print(f"{len(kept_mods)} mods kept, {len(mods) - len(kept_mods)} removed: "
       f"{len(remove_paths)} folders, {len(remove_plugins)} plugins")
