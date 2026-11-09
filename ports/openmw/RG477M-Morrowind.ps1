@@ -149,29 +149,48 @@ do {
 if (-not $ok) { Fail "The list isn't fully installed; run this script again to resume." }
 
 # Mods and patches the list doesn't download (patches found by lists/nexus_patch_scan.py),
-# fetched through umo's custom list with your Nexus account and copied to Extra, which the
-# conversion loads after the list, in name order.
-$extraPatches = @(
-    @{ Name = "TMR Patch for OAAB Tel Mora"; Link = "nxm://morrowind/mods/52278/files/1000054494?key=&expires=&user_id=" },
-    # heads and hair, asked for on top of the list; the rigged edition is the OpenMW one
-    @{ Name = "Redguard Customization Expansion"; Link = "nxm://morrowind/mods/52477/files/1000039404?key=&expires=&user_id=" },
-    @{ Name = "Ways Better Hairstyles Rigged Edition"; Link = "nxm://morrowind/mods/60193/files/1000073779?key=&expires=&user_id=" }
+# fetched through umo's custom list with your Nexus account into Extra, which the conversion
+# loads after the list in name order. A download with several versions inside gets an
+# rg477m.txt naming the folders and plugins to use.
+function Link([int]$mod, [long]$file) { "nxm://morrowind/mods/$mod/files/${file}?key=&expires=&user_id=" }
+$extraMods = @(
+    @{ Name = "10 TMR Patch for OAAB Tel Mora"; Link = Link 52278 1000054494 },
+    # heads, hair and body proportions; the rigged hairstyles are the OpenMW edition
+    @{ Name = "20 Redguard Customization Expansion"; Link = Link 52477 1000039404 },
+    @{ Name = "21 Ways Better Hairstyles Rigged Edition"; Link = Link 60193 1000073779 },
+    @{ Name = "22 Height and Weight"; Link = Link 51844 1000050299 },
+    # Interesting Outfits and TipsyTekPriest's Tamriel_Data placements
+    @{ Name = "30 Interesting Outfits - Kinsmer"; Link = Link 52167 1000070129 },
+    @{ Name = "31 Interesting Outfits - Imperials"; Link = Link 53651 1000070078 },
+    @{ Name = "32 Interesting Outfits - Ashlanders"; Link = Link 54099 1000071959 },
+    @{ Name = "33 Interesting Outfits - Cultists"; Link = Link 51922 1000071374 },
+    @{ Name = "34 Interesting Outfits - Tamriel Rebuilt Guards"; Link = Link 55776 1000071961 },
+    @{ Name = "35 Interesting Outfits - SHOTN Guards"; Link = Link 56803 1000070882 },
+    @{ Name = "36 Interesting Outfits - Project Cyrodiil Guards"; Link = Link 56804 1000070812 },
+    @{ Name = "37 Watchmen on Vvardenfell"; Link = Link 52585 1000053714 },
+    @{ Name = "38 PTR Weapons and Armor on Vvardenfell"; Link = Link 53686 1000056585 },
+    @{ Name = "39 PTR Tapestries and EEC assets on Vvardenfell"; Link = Link 55991 1000057649 },
+    @{ Name = "40 TR Newspaper Spawns on Vvardenfell"; Link = Link 56788 1000054149 },
+    # weather chances only (a script); Devilish Snow and Ash are shader effects, left out
+    @{ Name = "50 Devilish Regional Weather"; Link = Link 60856 1000073583 }
 )
 if ($List -eq "expanded-vanilla") {
     Step "Mods and patches the list doesn't download"
-    foreach ($patch in $extraPatches) {
-        $target = Join-Path (Join-Path $Work "Extra") $patch.Name
-        if (Test-Path $target) { Write-Host "  $($patch.Name): already in Extra"; continue }
+    $roots = @($Tools, $Mods) | Where-Object { Test-Path $_ }
+    foreach ($extraMod in $extraMods) {
+        $target = Join-Path (Join-Path $Work "Extra") $extraMod.Name
+        if (Test-Path $target) { Write-Host "  $($extraMod.Name): already in Extra"; continue }
         $before = Get-Date
-        & $umo.FullName add $patch.Link
-        $plugin = Get-ChildItem $Tools, $Mods -Recurse -File -Include *.esp, *.esm, *.omwaddon -ErrorAction SilentlyContinue |
-            Where-Object { $_.LastWriteTime -gt $before -or $_.CreationTime -gt $before } | Select-Object -First 1
-        if ($LASTEXITCODE -ne 0 -or -not $plugin) {
-            Write-Host "  $($patch.Name) could not be downloaded; get it from its Nexus page into $target to add it." -ForegroundColor Yellow
+        & $umo.FullName add $extraMod.Link
+        # the download is the new folder whose parent folder is not new
+        $new = @(Get-ChildItem $roots -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.CreationTime -gt $before })
+        $top = @($new | Where-Object { $_.Parent.CreationTime -le $before })
+        if ($LASTEXITCODE -ne 0 -or $top.Count -ne 1) {
+            Write-Host "  $($extraMod.Name) could not be downloaded; put it in $target by hand to add it." -ForegroundColor Yellow
             continue
         }
-        robocopy $plugin.DirectoryName $target /E /NFL /NDL /NJH /NJS /NP | Out-Null
-        Write-Host "  $($patch.Name): $($plugin.Name)"
+        robocopy $top[0].FullName $target /E /NFL /NDL /NJH /NJS /NP | Out-Null
+        Write-Host "  $($extraMod.Name)"
     }
 }
 
@@ -855,6 +874,15 @@ if (Test-Path $extraSource) {
         $target = Join-Path $Mods $folder.Name
         robocopy $folder.FullName $target /E /NFL /NDL /NJH /NJS /NP | Out-Null
         if ($LASTEXITCODE -ge 8) { Fail "Copying $($folder.Name) failed." }
+        $choice = Join-Path $target "rg477m.txt"
+        if (Test-Path $choice) {
+            # data=<subfolder> and content=<plugin> lines, in load order
+            foreach ($entry in Get-Content $choice) {
+                if ($entry -like "data=*") { $lines.Add('data="' + (To-Android (Join-Path $target $entry.Substring(5))) + '"') }
+                elseif ($entry -like "content=*") { $lines.Add($entry); Write-Host "  $($entry.Substring(8))" }
+            }
+            continue
+        }
         $lines.Add('data="' + (To-Android $target) + '"')
         foreach ($plugin in Get-ChildItem $target -File | Where-Object { $_.Extension -match '^\.(esm|esp|omwaddon|omwscripts)$' } | Sort-Object Name) {
             $lines.Add("content=$($plugin.Name)")
