@@ -148,14 +148,17 @@ do {
 } while (-not $ok -and (Ask "Run umo again?"))
 if (-not $ok) { Fail "The list isn't fully installed; run this script again to resume." }
 
-# Patches from the mods' own Nexus pages that the list doesn't download (found by
-# lists/nexus_patch_scan.py), fetched through umo's custom list with your Nexus account and
-# copied to Extra, which the conversion loads after the list.
+# Mods and patches the list doesn't download (patches found by lists/nexus_patch_scan.py),
+# fetched through umo's custom list with your Nexus account and copied to Extra, which the
+# conversion loads after the list, in name order.
 $extraPatches = @(
-    @{ Name = "TMR Patch for OAAB Tel Mora"; Link = "nxm://morrowind/mods/52278/files/1000054494?key=&expires=&user_id=" }
+    @{ Name = "TMR Patch for OAAB Tel Mora"; Link = "nxm://morrowind/mods/52278/files/1000054494?key=&expires=&user_id=" },
+    # heads and hair, asked for on top of the list; the rigged edition is the OpenMW one
+    @{ Name = "Redguard Customization Expansion"; Link = "nxm://morrowind/mods/52477/files/1000039404?key=&expires=&user_id=" },
+    @{ Name = "Ways Better Hairstyles Rigged Edition"; Link = "nxm://morrowind/mods/60193/files/1000073779?key=&expires=&user_id=" }
 )
 if ($List -eq "expanded-vanilla") {
-    Step "Patches the list doesn't download"
+    Step "Mods and patches the list doesn't download"
     foreach ($patch in $extraPatches) {
         $target = Join-Path (Join-Path $Work "Extra") $patch.Name
         if (Test-Path $target) { Write-Host "  $($patch.Name): already in Extra"; continue }
