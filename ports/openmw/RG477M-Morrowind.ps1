@@ -819,6 +819,24 @@ if ($problems.Count -gt 0) {
 
 # ---------------------------------------------------------------------------- RG477M additions
 
+# Patches you downloaded yourself: each folder in C:\Morrowind477M\Extra is copied into
+# OpenMWMods and loaded after the list, plugins in name order.
+$extraSource = Join-Path $Work "Extra"
+if (Test-Path $extraSource) {
+    foreach ($folder in Get-ChildItem $extraSource -Directory | Sort-Object Name) {
+        Step "Adding $($folder.Name) from Extra"
+        $target = Join-Path $Mods $folder.Name
+        robocopy $folder.FullName $target /E /NFL /NDL /NJH /NJS /NP | Out-Null
+        if ($LASTEXITCODE -ge 8) { Fail "Copying $($folder.Name) failed." }
+        $lines.Add('data="' + (To-Android $target) + '"')
+        foreach ($plugin in Get-ChildItem $target -File | Where-Object { $_.Extension -match '^\.(esm|esp|omwaddon|omwscripts)$' } | Sort-Object Name) {
+            $lines.Add("content=$($plugin.Name)")
+            Write-Host "  $($plugin.Name)"
+        }
+    }
+    [IO.File]::WriteAllLines((Join-Path $Momw "openmw.cfg"), $lines)
+}
+
 if (-not $KeepStartingSkills) {
     Step "Adding Skills Start At One"
     # mods/SkillsStartAtOne in GammaOSNext; last in the load order so nothing resets it
