@@ -1,0 +1,28 @@
+name: Nexus mod files
+
+# Lists a Morrowind Nexus mod's files (ids, names, categories) in the log, for adding them to
+# the RG477M Morrowind script.
+on:
+  workflow_dispatch:
+    inputs:
+      mods:
+        description: Nexus mod ids, space separated
+        required: true
+
+jobs:
+  files:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Files
+        env:
+          MODS: ${{ inputs.mods }}
+        run: |
+          for id in $MODS; do
+            echo "== mod $id"
+            curl -fsS -A "RG477M-setup" -H "Content-Type: application/json" https://api.nexusmods.com/v2/graphql \
+              -d "{\"query\":\"{ modFiles(modId: $id, gameId: 100) { fileId name category version description } }\"}" |
+              python3 -c "import json,sys,re
+          for f in json.load(sys.stdin)['data']['modFiles']:
+              d=re.sub(r'<[^>]+>',' ',f['description'] or '')[:200].replace(chr(10),' ')
+              print(f\"{f['fileId']} | {f['category']} | {f['name']} | {f['version']} | {d}\")"
+          done
