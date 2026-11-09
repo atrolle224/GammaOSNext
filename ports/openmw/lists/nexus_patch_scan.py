@@ -62,7 +62,7 @@ for m in keep:
             blob = f"{f['name']} {text(f['description'])}"
             others = [n for n, rx in spot.items() if n != m["name"] and rx.search(blob)]
             if re.search(r"patch|compat", blob, re.I) or others:
-                entry["files"].append({"name": f["name"], "category": f["category"],
+                entry["files"].append({"name": f["name"], "fileId": f["fileId"], "category": f["category"],
                                        "description": text(f["description"])[:300], "mentions": others})
         nodes = gql(MOD, {"ids": [{"gameDomain": "morrowind", "modId": int(mod_id)}]})["legacyModsByDomain"]["nodes"]
         if nodes:
