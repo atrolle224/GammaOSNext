@@ -1009,11 +1009,12 @@ applyNowDescription: "Sets every skill of the character you are playing to the s
 # ---------------------------------------------------------------------------- handheld textures
 
 Step "Shrinking textures over 1024 pixels"
-$lowRes = Join-Path $PSScriptRoot "RG477M-Morrowind-LowRes.ps1"
-if (Test-Path $lowRes) {
+$lowRes = @($PSScriptRoot, $Work) | ForEach-Object { Join-Path $_ "RG477M-Morrowind-LowRes.ps1" } |
+    Where-Object { Test-Path $_ } | Select-Object -First 1
+if ($lowRes) {
     & $lowRes -Work $Work -NoZip
 } else {
-    Write-Host "RG477M-Morrowind-LowRes.ps1 is not next to this script; textures stay full size." -ForegroundColor Yellow
+    Write-Host "RG477M-Morrowind-LowRes.ps1 is not in $Work; textures stay full size." -ForegroundColor Yellow
 }
 
 # ---------------------------------------------------------------------------- done
