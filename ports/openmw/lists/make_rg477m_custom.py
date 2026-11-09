@@ -58,32 +58,8 @@ DROP_PATHS = [
 ]
 DROP_PLUGINS = ["Little Landscapes - Seyda Neen Swamp Pools.ESP"]
 
-mods = json.load(open(sys.argv[1], encoding="utf-8"))
-missing = KEEP_MODS - {m["name"] for m in mods}
-if missing:
-    sys.exit(f"not on the list: {sorted(missing)}")
-
-
 def kept(m):
     return m["category"] in KEEP or m["name"] in KEEP_MODS
-
-
-kept_paths = [f"{m['category']}/{p}" for m in mods if kept(m) for p in m["data_paths"]]
-kept_plugins = {p.lower() for m in mods if kept(m) for p in m["plugins"]}
-
-remove_paths, remove_plugins = [], []
-for m in mods:
-    if kept(m):
-        continue
-    for p in m["data_paths"]:
-        path = f"{m['category']}/{p}"
-        # removeData matches by substring: never let it catch a kept folder
-        if any(path in k for k in kept_paths):
-            sys.exit(f"{path} would also remove a kept folder")
-        remove_paths.append(path)
-    remove_plugins += [p for p in m["plugins"] if p.lower() not in kept_plugins]
-remove_paths += DROP_PATHS
-remove_plugins += DROP_PLUGINS
 
 
 def toml_list(items):
@@ -92,11 +68,38 @@ def toml_list(items):
     return "\n".join(f"  {quote}{i.replace('/', chr(92))}{quote}," for i in items)
 
 
-with open(sys.argv[2], "w", encoding="utf-8", newline="\n") as f:
-    f.write("[[Customizations]]\nlistName = 'expanded-vanilla'\n")
-    f.write(f"removeData = [\n{toml_list(remove_paths)}\n]\n")
-    f.write(f"removeContent = [\n{toml_list(remove_plugins)}\n]\n")
+def main():
+    mods = json.load(open(sys.argv[1], encoding="utf-8"))
+    missing = KEEP_MODS - {m["name"] for m in mods}
+    if missing:
+        sys.exit(f"not on the list: {sorted(missing)}")
 
-kept_mods = [m for m in mods if kept(m)]
-print(f"{len(kept_mods)} mods kept, {len(mods) - len(kept_mods)} removed: "
-      f"{len(remove_paths)} folders, {len(remove_plugins)} plugins")
+    kept_paths = [f"{m['category']}/{p}" for m in mods if kept(m) for p in m["data_paths"]]
+    kept_plugins = {p.lower() for m in mods if kept(m) for p in m["plugins"]}
+
+    remove_paths, remove_plugins = [], []
+    for m in mods:
+        if kept(m):
+            continue
+        for p in m["data_paths"]:
+            path = f"{m['category']}/{p}"
+            # removeData matches by substring: never let it catch a kept folder
+            if any(path in k for k in kept_paths):
+                sys.exit(f"{path} would also remove a kept folder")
+            remove_paths.append(path)
+        remove_plugins += [p for p in m["plugins"] if p.lower() not in kept_plugins]
+    remove_paths += DROP_PATHS
+    remove_plugins += DROP_PLUGINS
+
+    with open(sys.argv[2], "w", encoding="utf-8", newline="\n") as f:
+        f.write("[[Customizations]]\nlistName = 'expanded-vanilla'\n")
+        f.write(f"removeData = [\n{toml_list(remove_paths)}\n]\n")
+        f.write(f"removeContent = [\n{toml_list(remove_plugins)}\n]\n")
+
+    kept_mods = [m for m in mods if kept(m)]
+    print(f"{len(kept_mods)} mods kept, {len(mods) - len(kept_mods)} removed: "
+          f"{len(remove_paths)} folders, {len(remove_plugins)} plugins")
+
+
+if __name__ == "__main__":
+    main()

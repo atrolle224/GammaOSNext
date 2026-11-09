@@ -1,0 +1,26 @@
+name: Nexus patch scan
+
+# Patches on Nexus for the mods of the RG477M custom Morrowind list that the list doesn't
+# install, as a draft release (ports/openmw/lists/nexus_patch_scan.py).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan
+        run: |
+          set -e
+          curl -fsS -A "RG477M-setup" https://modding-openmw.com/api/lists/expanded-vanilla -o ev.json
+          python3 ports/openmw/lists/nexus_patch_scan.py ev.json nexus-patches.json nexus-patches.md
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=nexus-patches-$(date -u +%Y%m%d-%H%M)
+          gh release create "$tag" -R "$GITHUB_REPOSITORY" --draft --title "$tag" --notes "Nexus patch scan" nexus-patches.json nexus-patches.md
