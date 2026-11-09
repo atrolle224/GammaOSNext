@@ -149,48 +149,73 @@ do {
 if (-not $ok) { Fail "The list isn't fully installed; run this script again to resume." }
 
 # Mods and patches the list doesn't download (patches found by lists/nexus_patch_scan.py),
-# fetched through umo's custom list with your Nexus account into Extra, which the conversion
-# loads after the list in name order. A download with several versions inside gets an
-# rg477m.txt naming the folders and plugins to use.
-function Link([int]$mod, [long]$file) { "nxm://morrowind/mods/$mod/files/${file}?key=&expires=&user_id=" }
+# fetched from Nexus with the API key umo setup saved (Premium download links), unpacked into
+# Extra, which the conversion loads after the list in name order. A download with several
+# versions inside gets an rg477m.txt naming the folders and plugins to use.
 $extraMods = @(
-    @{ Name = "10 TMR Patch for OAAB Tel Mora"; Link = Link 52278 1000054494 },
+    @{ Name = "10 TMR Patch for OAAB Tel Mora"; Mod = 52278; File = 1000054494 },
     # heads, hair and body proportions; the rigged hairstyles are the OpenMW edition
-    @{ Name = "20 Redguard Customization Expansion"; Link = Link 52477 1000039404 },
-    @{ Name = "21 Ways Better Hairstyles Rigged Edition"; Link = Link 60193 1000073779 },
-    @{ Name = "22 Height and Weight"; Link = Link 51844 1000050299 },
+    @{ Name = "20 Redguard Customization Expansion"; Mod = 52477; File = 1000039404 },
+    @{ Name = "21 Ways Better Hairstyles Rigged Edition"; Mod = 60193; File = 1000073779 },
+    @{ Name = "22 Height and Weight"; Mod = 51844; File = 1000050299 },
     # Interesting Outfits and TipsyTekPriest's Tamriel_Data placements
-    @{ Name = "30 Interesting Outfits - Kinsmer"; Link = Link 52167 1000070129 },
-    @{ Name = "31 Interesting Outfits - Imperials"; Link = Link 53651 1000070078 },
-    @{ Name = "32 Interesting Outfits - Ashlanders"; Link = Link 54099 1000071959 },
-    @{ Name = "33 Interesting Outfits - Cultists"; Link = Link 51922 1000071374 },
-    @{ Name = "34 Interesting Outfits - Tamriel Rebuilt Guards"; Link = Link 55776 1000071961 },
-    @{ Name = "35 Interesting Outfits - SHOTN Guards"; Link = Link 56803 1000070882 },
-    @{ Name = "36 Interesting Outfits - Project Cyrodiil Guards"; Link = Link 56804 1000070812 },
-    @{ Name = "37 Watchmen on Vvardenfell"; Link = Link 52585 1000053714 },
-    @{ Name = "38 PTR Weapons and Armor on Vvardenfell"; Link = Link 53686 1000056585 },
-    @{ Name = "39 PTR Tapestries and EEC assets on Vvardenfell"; Link = Link 55991 1000057649 },
-    @{ Name = "40 TR Newspaper Spawns on Vvardenfell"; Link = Link 56788 1000054149 },
+    @{ Name = "30 Interesting Outfits - Kinsmer"; Mod = 52167; File = 1000070129 },
+    @{ Name = "31 Interesting Outfits - Imperials"; Mod = 53651; File = 1000070078 },
+    @{ Name = "32 Interesting Outfits - Ashlanders"; Mod = 54099; File = 1000071959 },
+    @{ Name = "33 Interesting Outfits - Cultists"; Mod = 51922; File = 1000071374 },
+    @{ Name = "34 Interesting Outfits - Tamriel Rebuilt Guards"; Mod = 55776; File = 1000071961 },
+    @{ Name = "35 Interesting Outfits - SHOTN Guards"; Mod = 56803; File = 1000070882 },
+    @{ Name = "36 Interesting Outfits - Project Cyrodiil Guards"; Mod = 56804; File = 1000070812 },
+    @{ Name = "37 Watchmen on Vvardenfell"; Mod = 52585; File = 1000053714 },
+    @{ Name = "38 PTR Weapons and Armor on Vvardenfell"; Mod = 53686; File = 1000056585 },
+    @{ Name = "39 PTR Tapestries and EEC assets on Vvardenfell"; Mod = 55991; File = 1000057649 },
+    @{ Name = "40 TR Newspaper Spawns on Vvardenfell"; Mod = 56788; File = 1000054149 },
     # weather chances only (a script); Devilish Snow and Ash are shader effects, left out
-    @{ Name = "50 Devilish Regional Weather"; Link = Link 60856 1000073583 }
+    @{ Name = "50 Devilish Regional Weather"; Mod = 60856; File = 1000073583 }
 )
+function Get-NexusKey {
+    $files = @($env:LOCALAPPDATA, $env:APPDATA) | ForEach-Object { Join-Path $_ "umomwd" } |
+        Where-Object { Test-Path $_ } | ForEach-Object { Get-ChildItem $_ -Recurse -Filter config.json }
+    foreach ($file in $files) {
+        $settings = Get-Content $file.FullName -Raw | ConvertFrom-Json
+        $key = $settings.PSObject.Properties | Where-Object { $_.Name -match 'api.?key' -and $_.Value } |
+            Select-Object -First 1
+        if ($key) { return [string]$key.Value }
+    }
+    return $null
+}
+
 if ($List -eq "expanded-vanilla") {
     Step "Mods and patches the list doesn't download"
-    $roots = @($Tools, $Mods) | Where-Object { Test-Path $_ }
+    $nexusKey = Get-NexusKey
+    if (-not $nexusKey) { Write-Host "  No Nexus key from umo setup; skipping these." -ForegroundColor Yellow }
+    $headers = @{ apikey = $nexusKey; "Application-Name" = "RG477M-Morrowind"; "Application-Version" = "1.0" }
+    $sevenZip = Join-Path $Tools "7zmo.exe"
+    $archives = Join-Path $Cache "extra"
+    New-Item -ItemType Directory -Force $archives | Out-Null
     foreach ($extraMod in $extraMods) {
+        if (-not $nexusKey) { break }
         $target = Join-Path (Join-Path $Work "Extra") $extraMod.Name
         if (Test-Path $target) { Write-Host "  $($extraMod.Name): already in Extra"; continue }
-        $before = Get-Date
-        & $umo.FullName add $extraMod.Link
-        # the download is the new folder whose parent folder is not new
-        $new = @(Get-ChildItem $roots -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.CreationTime -gt $before })
-        $top = @($new | Where-Object { $_.Parent.CreationTime -le $before })
-        if ($LASTEXITCODE -ne 0 -or $top.Count -ne 1) {
-            Write-Host "  $($extraMod.Name) could not be downloaded; put it in $target by hand to add it." -ForegroundColor Yellow
-            continue
+        try {
+            $api = "https://api.nexusmods.com/v1/games/morrowind/mods/$($extraMod.Mod)/files/$($extraMod.File)"
+            $info = Invoke-RestMethod "$api.json" -Headers $headers
+            $archive = Join-Path $archives $info.file_name
+            if (-not (Test-Path $archive)) {
+                $links = Invoke-RestMethod "$api/download_link.json" -Headers $headers
+                Invoke-WebRequest $links[0].URI -OutFile $archive
+            }
+            New-Item -ItemType Directory -Force $target | Out-Null
+            & $sevenZip x $archive "-o$target" -y | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                if ($archive -notlike "*.zip") { throw "could not unpack $($info.file_name)" }
+                Expand-Archive $archive $target -Force
+            }
+            Write-Host "  $($extraMod.Name)"
+        } catch {
+            Remove-Item -LiteralPath $target -Recurse -Force -ErrorAction SilentlyContinue
+            Write-Host "  $($extraMod.Name) failed: $($_.Exception.Message)" -ForegroundColor Yellow
         }
-        robocopy $top[0].FullName $target /E /NFL /NDL /NJH /NJS /NP | Out-Null
-        Write-Host "  $($extraMod.Name)"
     }
 }
 
