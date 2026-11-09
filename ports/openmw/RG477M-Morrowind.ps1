@@ -380,52 +380,130 @@ if (-not $KeepStartingSkills) {
     New-Item -ItemType Directory -Force (Join-Path $skillsMod "scripts\SkillsStartAtOne") | Out-Null
     [IO.File]::WriteAllText((Join-Path $skillsMod "SkillsStartAtOne.omwscripts"), "PLAYER: scripts/SkillsStartAtOne/player.lua`n")
     [IO.File]::WriteAllText((Join-Path $skillsMod "scripts\SkillsStartAtOne\player.lua"), @'
--- Skills Start At One (RG477M): when a new character finishes character creation (class,
--- birthsign and the census office), every skill is set to 1. Characters that were past
--- character creation before this mod was added are left alone.
+-- Skills Start At One (RG477M), for OpenMW 0.49 and newer.
+--
+-- A new character's skills are all set to one level (1 by default) the moment character
+-- creation ends: when you walk out of the Census and Excise Office with your class and
+-- birthsign. Characters that were past character creation before the mod was added keep
+-- their skills, unless you use "Set this character's skills now" in
+-- Options > Scripts > Skills Start At One.
+--
+-- Leveling mods (Natural Character Growth, Skill Evolution) set up their own state when
+-- character creation ends, so the level is held for a few seconds to have the last word.
 
-local self = require('openmw.self')
-local types = require('openmw.types')
+local async = require('openmw.async')
 local core = require('openmw.core')
+local I = require('openmw.interfaces')
+local self = require('openmw.self')
+local storage = require('openmw.storage')
+local types = require('openmw.types')
 local ui = require('openmw.ui')
 
--- seen during character creation: the next finished state is this character's start
-local inCharGen = false
-local done = false
+local GROUP = 'SettingsSkillsStartAtOne'
+local HOLD_SECONDS = 5
+local CENSUS_OFFICE = 'seyda neen, census and excise office'
 
-local function setSkillsToOne()
+I.Settings.registerPage {
+    key = 'SkillsStartAtOne',
+    l10n = 'SkillsStartAtOne',
+    name = 'Skills Start At One',
+    description = 'pageDescription',
+}
+I.Settings.registerGroup {
+    key = GROUP,
+    page = 'SkillsStartAtOne',
+    l10n = 'SkillsStartAtOne',
+    name = 'Skills Start At One',
+    permanentStorage = true,
+    settings = {
+        {
+            key = 'level',
+            renderer = 'number',
+            name = 'levelName',
+            description = 'levelDescription',
+            default = 1,
+            argument = { integer = true, min = 0, max = 100 },
+        },
+        {
+            key = 'applyNow',
+            renderer = 'checkbox',
+            name = 'applyNowName',
+            description = 'applyNowDescription',
+            default = false,
+        },
+    },
+}
+local settings = storage.playerSection(GROUP)
+
+-- 'waiting': in character creation; 'done': this character has had its skills set, or was
+-- already past character creation when the mod arrived
+local phase = nil
+local holdUntil = 0
+local lastCell = nil
+
+local function setSkills()
+    local level = settings:get('level') or 1
     for _, skill in pairs(core.stats.Skill.records) do
         local stat = types.NPC.stats.skills[skill.id](self)
-        stat.base = 1
+        if stat.base ~= level then
+            stat.base = level
+        end
         stat.progress = 0
     end
-    done = true
-    ui.showMessage('Every skill starts at 1.')
+end
+
+local function start(message)
+    setSkills()
+    phase = 'done'
+    holdUntil = core.getRealTime() + HOLD_SECONDS
+    ui.showMessage(message:format(settings:get('level') or 1))
+end
+
+settings:subscribe(async:callback(function(_, key)
+    if key == 'applyNow' and settings:get('applyNow') then
+        settings:set('applyNow', false)
+        start('Every skill set to %d.')
+    end
+end))
+
+local function firstLook()
+    phase = types.Player.isCharGenFinished(self) and 'done' or 'waiting'
 end
 
 return {
     engineHandlers = {
+        onInit = firstLook,
         onUpdate = function()
-            if done then
-                return
+            if phase == nil then
+                firstLook()
             end
-            if not types.Player.isCharGenFinished(self) then
-                inCharGen = true
-            elseif inCharGen then
-                setSkillsToOne()
+            local cell = self.cell and self.cell.name:lower() or nil
+            if phase == 'waiting' then
+                local leftOffice = lastCell == CENSUS_OFFICE and cell ~= CENSUS_OFFICE
+                if types.Player.isCharGenFinished(self) or leftOffice then
+                    start('Every skill starts at %d.')
+                end
+            elseif core.getRealTime() < holdUntil then
+                setSkills()
             end
+            lastCell = cell
         end,
         onSave = function()
-            return { inCharGen = inCharGen, done = done }
+            return { phase = phase }
         end,
         onLoad = function(data)
-            if data then
-                inCharGen = data.inCharGen
-                done = data.done
-            end
+            phase = data and data.phase or nil
         end,
     },
 }
+'@)
+    New-Item -ItemType Directory -Force (Join-Path $skillsMod "l10n\SkillsStartAtOne") | Out-Null
+    [IO.File]::WriteAllText((Join-Path $skillsMod "l10n\SkillsStartAtOne\en.yaml"), @'
+pageDescription: "Every skill of a new character starts at one level once character creation ends (leaving the Census and Excise Office)."
+levelName: "Starting skill level"
+levelDescription: "The level every skill is set to. 1 by default."
+applyNowName: "Set this character's skills now"
+applyNowDescription: "Sets every skill of the character you are playing to the starting level, once."
 '@)
     $lines.Add('data="' + (To-Android $skillsMod) + '"')
     $lines.Add("content=SkillsStartAtOne.omwscripts")

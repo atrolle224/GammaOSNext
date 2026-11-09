@@ -1,0 +1,5 @@
+pageDescription: "Every skill of a new character starts at one level once character creation ends (leaving the Census and Excise Office)."
+levelName: "Starting skill level"
+levelDescription: "The level every skill is set to. 1 by default."
+applyNowName: "Set this character's skills now"
+applyNowDescription: "Sets every skill of the character you are playing to the starting level, once."
