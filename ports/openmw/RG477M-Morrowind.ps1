@@ -443,18 +443,25 @@ local lastCell = nil
 
 local function setSkills()
     local level = settings:get('level') or 1
-    for _, skill in pairs(core.stats.Skill.records) do
-        local stat = types.NPC.stats.skills[skill.id](self)
-        if stat.base ~= level then
-            stat.base = level
+    for _, skill in ipairs(core.stats.Skill.records) do
+        local accessor = types.NPC.stats.skills[skill.id]
+        if accessor then
+            local stat = accessor(self)
+            if stat.base ~= level then
+                stat.base = level
+            end
+            stat.progress = 0
         end
-        stat.progress = 0
     end
 end
 
 local function start(message)
-    setSkills()
     phase = 'done'
+    local ok, err = pcall(setSkills)
+    if not ok then
+        ui.showMessage('Skills Start At One failed: ' .. tostring(err))
+        return
+    end
     holdUntil = core.getRealTime() + HOLD_SECONDS
     ui.showMessage(message:format(settings:get('level') or 1))
 end
@@ -484,7 +491,7 @@ return {
                     start('Every skill starts at %d.')
                 end
             elseif core.getRealTime() < holdUntil then
-                setSkills()
+                pcall(setSkills)
             end
             lastCell = cell
         end,
