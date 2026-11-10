@@ -12,7 +12,7 @@
 # then shrinks every texture over 1024 pixels (RG477M-Morrowind-LowRes.ps1, which must sit
 # next to this script) and adds Skills Start At One.
 #
-# Copy that folder to Internal storage\Documents on the RG477M (or unzip the zip there).
+# Copy that folder to Internal storage\Documents on the RG477M (USB file transfer).
 #
 # Run it in PowerShell:
 #   powershell -ExecutionPolicy Bypass -File .\RG477M-Morrowind.ps1
@@ -172,7 +172,14 @@ $extraMods = @(
     @{ Name = "39 PTR Tapestries and EEC assets on Vvardenfell"; Mod = 55991; File = 1000057649; Pick = @('data=1. Core', 'data=2. BCOM Compatibility', 'content=PTR Tapestries & EEC on VV.ESP') },
     @{ Name = "40 TR Newspaper Spawns on Vvardenfell"; Mod = 56788; File = 1000054149; Pick = @('data=1. Core', 'data=2. BCOM version', 'content=TR Newspaper Spawns on Vvardenfell.ESP') },
     # weather chances only (a script); Devilish Snow and Ash are shader effects, left out
-    @{ Name = "50 Devilish Regional Weather"; Mod = 60856; File = 1000073583 }
+    @{ Name = "50 Devilish Regional Weather"; Mod = 60856; File = 1000073583 },
+    # bodies: vanilla-proportioned, pluginless (Familiar Faces, the heads, comes with the list)
+    @{ Name = "60 Pluginless Roberts Bodies"; Mod = 43795; File = 1000051673 },
+    @{ Name = "61 Pluginless Roberts Bodies TD"; Mod = 43795; File = 1000056925 },
+    @{ Name = "62 Roberts Bodies Color Tweaks for Vanilla Heads"; Mod = 48299; File = 1000022566 },
+    @{ Name = "63 New Beast Bodies Clean"; Mod = 47678; File = 1000017456; Pick = @('data=?') },
+    @{ Name = "64 New Beast Bodies Clean Pluginless"; Mod = 43795; File = 1000039580 },
+    @{ Name = "65 Familiar Faces TD Khajiits"; Mod = 43795; File = 1000056930 }
 )
 function Get-NexusKey {
     $files = @($env:LOCALAPPDATA, $env:APPDATA) | ForEach-Object { Join-Path $_ "umomwd" } |
@@ -405,8 +412,6 @@ removeData = [
   '''Exteriors\OAABPomegranates\00 Core''',
   '''Exteriors\OAABPomegranates\02 HD Textures''',
   '''Exteriors\OAABPomegranates\03 SSQN OpenMW''',
-  '''BodiesandHeads\FamiliarFacesbyCaleb''',
-  '''BodiesandHeads\FaceliftforTamrielData''',
   '''Gameplay\StatsPotionsTrainingLimitsOpenMWOblivionStyleIncluded''',
   '''Gameplay\BestFriendsForeverOpenMW''',
   '''Gameplay\FriendlierFireOpenMW''',
@@ -987,6 +992,20 @@ if ($problems.Count -gt 0) {
 
 # Patches you downloaded yourself: each folder in C:\Morrowind477M\Extra is copied into
 # OpenMWMods and loaded after the list, plugins in name order.
+# an archive that keeps its files in a folder of its own (Data Files, the mod's name) is read from there
+function Find-DataRoot($folder) {
+    $parts = '^(meshes|textures|icons|bookart|sound|music|scripts|fonts|l10n|splash|video)$'
+    $queue = New-Object Collections.Generic.Queue[object]
+    $queue.Enqueue(@($folder, 0))
+    while ($queue.Count -gt 0) {
+        $dir, $depth = $queue.Dequeue()
+        $items = @(Get-ChildItem -LiteralPath $dir)
+        if ($items | Where-Object { ($_.PSIsContainer -and $_.Name -match $parts) -or
+                (-not $_.PSIsContainer -and $_.Extension -match '^\.(esm|esp|omwaddon|omwscripts|bsa)$') }) { return $dir }
+        if ($depth -lt 3) { $items | Where-Object { $_.PSIsContainer } | ForEach-Object { $queue.Enqueue(@($_.FullName, $depth + 1)) } }
+    }
+    return $folder
+}
 $extraSource = Join-Path $Work "Extra"
 if (Test-Path $extraSource) {
     foreach ($folder in Get-ChildItem $extraSource -Directory | Sort-Object Name) {
@@ -996,15 +1015,17 @@ if (Test-Path $extraSource) {
         if ($LASTEXITCODE -ge 8) { Fail "Copying $($folder.Name) failed." }
         $choice = Join-Path $target "rg477m.txt"
         if (Test-Path $choice) {
-            # data=<subfolder> and content=<plugin> lines, in load order
+            # data=<subfolder> (data=? the folder with the mod's files) and content=<plugin> lines, in load order
             foreach ($entry in Get-Content $choice) {
-                if ($entry -like "data=*") { $lines.Add('data="' + (To-Android (Join-Path $target $entry.Substring(5))) + '"') }
+                if ($entry -eq "data=?") { $lines.Add('data="' + (To-Android (Find-DataRoot $target)) + '"') }
+                elseif ($entry -like "data=*") { $lines.Add('data="' + (To-Android (Join-Path $target $entry.Substring(5))) + '"') }
                 elseif ($entry -like "content=*") { $lines.Add($entry); Write-Host "  $($entry.Substring(8))" }
             }
             continue
         }
+        $target = Find-DataRoot $target
         $lines.Add('data="' + (To-Android $target) + '"')
-        foreach ($plugin in Get-ChildItem $target -File | Where-Object { $_.Extension -match '^\.(esm|esp|omwaddon|omwscripts)$' } | Sort-Object Name) {
+        foreach ($plugin in Get-ChildItem -LiteralPath $target -File | Where-Object { $_.Extension -match '^\.(esm|esp|omwaddon|omwscripts)$' } | Sort-Object Name) {
             $lines.Add("content=$($plugin.Name)")
             Write-Host "  $($plugin.Name)"
         }
@@ -1174,10 +1195,8 @@ $sizeGb = [math]::Round(((Get-ChildItem $Out -Recurse -File | Measure-Object Len
 Step "Ready: $Out ($sizeGb GB)"
 Write-Host "Copy the whole 'Morrowind Android' folder to the RG477M's Internal storage\Documents"
 Write-Host "(a USB cable to the PC is the fastest way). Then start OpenMW Mali Mobile."
-Step "Zipping (a while for $sizeGb GB)"
-$zipFile = Join-Path $Work "Morrowind Android.zip"
-Remove-Item -LiteralPath $zipFile -ErrorAction SilentlyContinue
-tar.exe -a -c -f $zipFile -C $Work "Morrowind Android"
-if ($LASTEXITCODE -ne 0) { Fail "Making the zip failed ($LASTEXITCODE)." }
-Write-Host "Zip: $zipFile. Unzip it into Internal storage\Documents on the RG477M."
+# no zip: zipped, the folder is over 4 GB, which many Android unzip apps can't open whole
+foreach ($need in @("Morrowind.ini", "Data Files\Morrowind.esm", "momw\openmw.cfg", "momw\settings.cfg")) {
+    if (-not (Test-Path -LiteralPath (Join-Path $Out $need))) { Write-Host "  missing: $need" -ForegroundColor Red }
+}
 Write-Host "The download cache $Cache can be deleted now."

@@ -18,7 +18,7 @@ KEEP = {
     "FirstSteps", "OfficialPlugins", "PatchesFixesandConsistency", "ModdingResources",
     "CutContent", "MeshReplacers", "ModPatches", "Tools",
     # suggested: indoor content and music cost little while playing
-    "CavesandDungeons", "Interiors", "Randomizers", "Music",
+    "CavesandDungeons", "Interiors", "Randomizers", "Music", "BodiesandHeads",
 }
 
 # suggested from categories otherwise left out: small outdoor additions (big regional overhauls
