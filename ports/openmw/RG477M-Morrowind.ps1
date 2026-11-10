@@ -933,7 +933,8 @@ if ($counts.groundcover -gt 0 -and (Test-Path $settingsOut)) {
     if ($grassOn -and $grassOn -ine "true") { $problems.Add("settings.cfg has [Groundcover] enabled = $grassOn though the list has $($counts.groundcover) grass plugins") }
 }
 # a mesh whose texture is in no folder is pink in the game: a patch for a mod the list left out.
-# Only textures in a subfolder are checked; the base game's are in its archives.
+# Only textures in a subfolder are checked; the base game's are in its archives. Many are
+# in meshes a mod ships but never places, so the list is a place to look, not a fault list.
 Write-Host "  Looking for meshes whose textures are missing"
 $textureNotes = New-Object Collections.Generic.List[string]
 $haveTextures = New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
@@ -957,7 +958,7 @@ foreach ($dir in $pcData) {
             $name = $m.Value.Replace('/', '\')
             $at = $name.IndexOf('textures\', [StringComparison]::OrdinalIgnoreCase)
             if ($at -ge 0) { $name = $name.Substring($at + 9) }
-            if ($name.IndexOf('\') -lt 1 -or $name -match '^(levelup|magicitem)\\') { continue }
+            if ($name.IndexOf('\') -lt 1 -or $name -match '^(levelup|magicitem|water|bookart)\\') { continue }
             $stem = $name.Substring(0, $name.Length - 4)
             if ($haveTextures.Contains($stem) -or $haveTextures.Contains($stem.Substring(1))) { continue }
             if (-not $missingTextures.ContainsKey($name)) { $missingTextures[$name] = New-Object Collections.Generic.List[string] }
