@@ -38,6 +38,8 @@ KEEP_MODS = {
 # kept mods, but not on the handheld
 DROP_PATHS = [
     "OAABData/HD",
+    # needs SM Bitter Coast Tree Replacer (Trees, not kept): pink saplings
+    "OAABSaplings/12 SM Bitter Coast Tree Replacer patch",
     "Cutting Room Floor - High Resolution Textures",
     "BeautifulCitiesofMorrowind/06 HD Textures",
     "OAABGrazelands/03 HD Textures",

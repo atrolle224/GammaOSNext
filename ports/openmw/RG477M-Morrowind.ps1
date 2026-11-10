@@ -539,6 +539,7 @@ removeData = [
   '''ThePopularPlague\02 HD Textures''',
   '''RemirosGroundcover\01b Thicker Grass OpenMW''',
   '''MOMWPatches\23 Little Landscapes Seyda Neen Swamp Pools Patched''',
+  '''OAABSaplings\12 SM Bitter Coast Tree Replacer patch (OpenMW)''',
 ]
 removeContent = [
   '''bcomxpfp.omwaddon''',
@@ -926,6 +927,45 @@ if ($counts.groundcover -gt 0 -and (Test-Path $settingsOut)) {
     }
     if ($grassOn -and $grassOn -ine "true") { $problems.Add("settings.cfg has [Groundcover] enabled = $grassOn though the list has $($counts.groundcover) grass plugins") }
 }
+# a mesh whose texture is in no folder is pink in the game: a patch for a mod the list left out.
+# Only textures in a subfolder are checked; the base game's are in its archives.
+Write-Host "  Looking for meshes whose textures are missing"
+$textureNotes = New-Object Collections.Generic.List[string]
+$haveTextures = New-Object 'Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+foreach ($dir in $pcData) {
+    $root = Join-Path $dir "textures"
+    if (-not (Test-Path -LiteralPath $root)) { continue }
+    foreach ($f in [IO.Directory]::EnumerateFiles($root, "*", [IO.SearchOption]::AllDirectories)) {
+        $rel = $f.Substring($root.Length + 1)
+        [void]$haveTextures.Add($rel.Substring(0, $rel.Length - [IO.Path]::GetExtension($rel).Length))
+    }
+}
+$missingTextures = @{}
+$latin1 = [Text.Encoding]::GetEncoding(28591)
+foreach ($dir in $pcData) {
+    if (Test-Path -LiteralPath (Join-Path $dir "Morrowind.esm")) { continue }
+    $root = Join-Path $dir "meshes"
+    if (-not (Test-Path -LiteralPath $root)) { continue }
+    foreach ($mesh in [IO.Directory]::EnumerateFiles($root, "*.nif", [IO.SearchOption]::AllDirectories)) {
+        $text = $latin1.GetString([IO.File]::ReadAllBytes($mesh))
+        foreach ($m in [regex]::Matches($text, '(?i)[a-z0-9_\\/ .\-]+\.(dds|tga|bmp)')) {
+            $name = $m.Value.Replace('/', '\')
+            $at = $name.IndexOf('textures\', [StringComparison]::OrdinalIgnoreCase)
+            if ($at -ge 0) { $name = $name.Substring($at + 9) }
+            if ($name.IndexOf('\') -lt 1 -or $name -match '^(levelup|magicitem)\\') { continue }
+            $stem = $name.Substring(0, $name.Length - 4)
+            if ($haveTextures.Contains($stem) -or $haveTextures.Contains($stem.Substring(1))) { continue }
+            if (-not $missingTextures.ContainsKey($name)) { $missingTextures[$name] = New-Object Collections.Generic.List[string] }
+            if ($missingTextures[$name].Count -lt 3) { $missingTextures[$name].Add($mesh.Substring($dir.Length + 1) + " in " + (Split-Path $dir -Leaf)) }
+        }
+    }
+}
+foreach ($name in ($missingTextures.Keys | Sort-Object)) {
+    $textureNotes.Add("textures\$name  (used by $($missingTextures[$name] -join ', '))")
+}
+if ($textureNotes.Count -gt 0) {
+    Write-Host "  $($textureNotes.Count) textures missing (pink in the game), listed in momw\check.txt" -ForegroundColor Yellow
+}
 $report = @(
     "$ListName ($List)",
     ("{0} folders, {1} plugins, {2} grass plugins, {3} archives" -f $counts.data, $counts.content, $counts.groundcover, $counts["fallback-archive"]),
@@ -933,6 +973,7 @@ $report = @(
     "Load order:"
 ) + ($lines | Where-Object { $_ -match '^(content|groundcover|fallback-archive)=' })
 if ($renamedNotes.Count -gt 0) { $report = $renamedNotes + @("") + $report }
+if ($textureNotes.Count -gt 0) { $report = @("Missing textures (pink in the game):") + $textureNotes + @("") + $report }
 if ($problems.Count -gt 0) { $report = @("PROBLEMS:") + $problems + @("") + $report }
 [IO.File]::WriteAllLines((Join-Path $Momw "check.txt"), $report)
 if ($problems.Count -gt 0) {
