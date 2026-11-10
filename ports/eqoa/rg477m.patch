@@ -1,0 +1,180 @@
+diff --git a/android/AndroidManifest.xml b/android/AndroidManifest.xml
+index 17dc576..0f4dc95 100644
+--- a/android/AndroidManifest.xml
++++ b/android/AndroidManifest.xml
+@@ -3,7 +3,7 @@
+      (EqoaActivity, java/), its library libeqoa_android.so (crates/eqoa,
+      src/android.rs). The version is build.sh's. -->
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-    package="io.github.dabdavis.eqoa">
++    package="io.github.atrolle224.eqoa477m">
+ 
+     <!-- wgpu draws on Vulkan, or on OpenGL ES 3 where there is none -->
+     <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+@@ -11,10 +11,12 @@
+     <uses-feature android:name="android.hardware.gamepad" android:required="false" />
+     <!-- the game's servers -->
+     <uses-permission android:name="android.permission.INTERNET" />
++    <!-- RG477M: texture packs in Internal storage/EQOA/textures -->
++    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+ 
+     <!-- allowBackup off: the settings name the player's account -->
+     <application
+-        android:label="EQOA"
++        android:label="EQOA Sandstorm"
+         android:icon="@mipmap/ic_launcher"
+         android:roundIcon="@mipmap/ic_launcher"
+         android:hasCode="true"
+@@ -28,7 +30,7 @@
+              itself (its window resized), never by the activity made again:
+              the game's event loop is made once a process -->
+         <activity
+-            android:name=".EqoaActivity"
++            android:name="io.github.dabdavis.eqoa.EqoaActivity"
+             android:exported="true"
+             android:launchMode="singleTask"
+             android:screenOrientation="sensorLandscape"
+diff --git a/android/java/io/github/dabdavis/eqoa/EqoaActivity.java b/android/java/io/github/dabdavis/eqoa/EqoaActivity.java
+index 14d8aea..8892328 100644
+--- a/android/java/io/github/dabdavis/eqoa/EqoaActivity.java
++++ b/android/java/io/github/dabdavis/eqoa/EqoaActivity.java
+@@ -9,8 +9,10 @@ import android.hardware.input.InputManager;
+ import android.net.Uri;
+ import android.os.Build;
+ import android.os.Bundle;
++import android.os.Environment;
+ import android.os.ParcelFileDescriptor;
+ import android.provider.OpenableColumns;
++import android.provider.Settings;
+ import android.system.Os;
+ import android.text.Editable;
+ import android.text.InputType;
+@@ -109,6 +111,7 @@ public class EqoaActivity extends NativeActivity {
+             }
+             trace = "1".equals(String.valueOf(extras.get("EQOA_INPUT_TRACE")));
+         }
++        rg477m();
+         // the disc played last time, opened again for the game ($EQOA_ISO)
+         openKeptDisc();
+         super.onCreate(state);
+@@ -121,6 +124,49 @@ public class EqoaActivity extends NativeActivity {
+         immersive();
+     }
+ 
++    /**
++     * RG477M: with a controller (the built-in one) the touch pad starts hidden;
++     * texture packs go in Internal storage/EQOA/textures/SLUS-20744/replacements
++     * once all-files access is allowed (asked once), else in the app's
++     * Android/data folder.
++     */
++    private void rg477m() {
++        for (int id : InputDevice.getDeviceIds()) {
++            InputDevice d = InputDevice.getDevice(id);
++            if (d != null && !d.isVirtual() && isPad(d.getSources())) {
++                setenv("EQOA_TOUCH", "0");
++                break;
++            }
++        }
++        File home = null;
++        if (Build.VERSION.SDK_INT >= 30 && Environment.isExternalStorageManager()) {
++            home = new File(Environment.getExternalStorageDirectory(), "EQOA");
++        } else if (getExternalFilesDir(null) != null) {
++            home = getExternalFilesDir(null);
++        }
++        if (home != null) {
++            new File(home, "textures/SLUS-20744/replacements").mkdirs();
++            setenv("EQOA_TEXTURES_HOME", home.getPath());
++        }
++        android.content.SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
++        if (Build.VERSION.SDK_INT >= 30 && !Environment.isExternalStorageManager() && !prefs.getBoolean("askedFiles", false)) {
++            prefs.edit().putBoolean("askedFiles", true).apply();
++            new AlertDialog.Builder(this)
++                .setTitle("Texture packs")
++                .setMessage("Allow file access so HD texture packs can go in Internal storage/EQOA/textures/SLUS-20744/replacements "
++                    + "(then turn them on in Options > Extended > Textures). Restart the game after allowing it.")
++                .setPositiveButton("Allow", (dlg, w) -> {
++                    try {
++                        startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:" + getPackageName())));
++                    } catch (Exception e) {
++                        startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
++                    }
++                })
++                .setNegativeButton("Not now", null)
++                .show();
++        }
++    }
++
+     /**
+      * How much of the window's bottom the device's keyboard covers, told to
+      * the game as it changes: the game draws above it (android.rs), as a
+@@ -248,7 +294,10 @@ public class EqoaActivity extends NativeActivity {
+     }
+ 
+     private static boolean fromPad(InputEvent e) {
+-        int s = e.getSource();
++        return isPad(e.getSource());
++    }
++
++    private static boolean isPad(int s) {
+         return (s & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD || (s & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK;
+     }
+ 
+@@ -312,6 +361,10 @@ public class EqoaActivity extends NativeActivity {
+             return;
+         }
+         boolean down = e.getAction() == KeyEvent.ACTION_DOWN;
++        // RG477M: a built-in pad that sends its Select as Back
++        if (fromPad(e) && code == KeyEvent.KEYCODE_BACK) {
++            code = KeyEvent.KEYCODE_BUTTON_SELECT;
++        }
+         // a controller's buttons and d-pad: the controller's state
+         if (fromPad(e) && (KeyEvent.isGamepadButton(code) || code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN
+                 || code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT)) {
+diff --git a/crates/eqoa/src/settings.rs b/crates/eqoa/src/settings.rs
+index 6cd210b..cd87141 100644
+--- a/crates/eqoa/src/settings.rs
++++ b/crates/eqoa/src/settings.rs
+@@ -319,7 +319,7 @@ const SERVER_FILE: &str = "server.opt";
+ /// client. apk users reporting they cannot login"): natively alone, as a page
+ /// is told its own (`web`'s `server` option) and another site's page must not
+ /// be sent here.
+-pub const DEFAULT_SERVER: &str = "eqoaclassic.com";
++pub const DEFAULT_SERVER: &str = "eqoa.live";
+ 
+ /// The server the title's Network Setup keeps (`server.opt`: the address
+ /// alone, a host name or IPv4 address), if one was set; a blank one kept is
+diff --git a/crates/eqoa/src/texpack.rs b/crates/eqoa/src/texpack.rs
+index 7e71822..915e43d 100644
+--- a/crates/eqoa/src/texpack.rs
++++ b/crates/eqoa/src/texpack.rs
+@@ -266,7 +266,12 @@ pub fn place() -> Option<Place> {
+     {
+         return Some(p.clone());
+     }
+-    let program = if cfg!(target_os = "android") { None } else { program() };
++    let program = if cfg!(target_os = "android") {
++        // RG477M: a folder a file manager or a PC's USB copy reaches ($EQOA_TEXTURES_HOME)
++        std::env::var_os("EQOA_TEXTURES_HOME").map(|d| (PathBuf::from(d), "the EQOA folder".to_string()))
++    } else {
++        program()
++    };
+     let p = resolve(program.as_ref().map(|(d, n)| (d.as_path(), n.as_str())), &config);
+     if let Some(from) = &p.moved {
+         crate::say(&format!("textures: {} moved to {}, beside the program", from.display(), p.dir.display()));
+diff --git a/crates/eqoa/src/viewer.rs b/crates/eqoa/src/viewer.rs
+index 400f63e..551d53a 100644
+--- a/crates/eqoa/src/viewer.rs
++++ b/crates/eqoa/src/viewer.rs
+@@ -1521,7 +1521,11 @@ fn touch_first() -> bool {
+     if crate::web::touch_first() {
+         return true;
+     }
+-    cfg!(target_os = "android") || std::env::var("EQOA_TOUCH").is_ok_and(|v| v == "1")
++    match std::env::var("EQOA_TOUCH").as_deref() {
++        Ok("1") => true,
++        Ok("0") => false,
++        _ => cfg!(target_os = "android"),
++    }
+ }
+ 
+ /// A key as the keyboard's dispatch takes it (`App::keyboard`): what it reads

@@ -1,0 +1,75 @@
+name: EQOA Sandstorm 477M
+
+# DabDavis/eqoa-rust-client-vanilla's Android app with ports/eqoa/rg477m.patch:
+# Sandstorm (eqoa.live) as the server, texture packs in Internal storage/EQOA,
+# the touch pad hidden with the built-in controller. Signed with the ports key.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Upstream commit
+        default: 539b591448c5a8b0b18cac1cf59009b17c1365a8
+  push:
+    paths:
+      - 'ports/eqoa/**'
+      - '.github/workflows/eqoa-477m.yml'
+
+permissions:
+  contents: read
+
+env:
+  UPSTREAM_REF: ${{ inputs.ref || '539b591448c5a8b0b18cac1cf59009b17c1365a8' }}
+  RUST_TOOLCHAIN: 1.99.1
+  ANDROID_NDK_VERSION: 30.0.16248370
+  ANDROID_BUILD_TOOLS: 37.0.0
+  ANDROID_PLATFORM: android-36
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upstream client
+        run: |
+          git clone https://github.com/DabDavis/eqoa-rust-client-vanilla eqoa
+          cd eqoa
+          git checkout "$UPSTREAM_REF"
+          git apply --whitespace=nowarn ../ports/eqoa/rg477m.patch
+          sed -i 's/--ks-key-alias eqoa /--ks-key-alias rg477m /' android/build.sh
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+          rustup default "$RUST_TOOLCHAIN"
+          rustup target add aarch64-linux-android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install the SDK's parts
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$ANDROID_NDK_VERSION" "build-tools;$ANDROID_BUILD_TOOLS" "platforms;$ANDROID_PLATFORM" > /dev/null
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION" >> "$GITHUB_ENV"
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: eqoa
+          key: eqoa-477m
+
+      - name: Build
+        run: |
+          mkdir -p "$RUNNER_TEMP/key" out
+          cp ports/keys/rg477m-ports.keystore "$RUNNER_TEMP/key/eqoa.jks"
+          printf android > "$RUNNER_TEMP/key/eqoa.jks.pass"
+          cd eqoa
+          EQOA_ANDROID_KEYSTORE="$RUNNER_TEMP/key/eqoa.jks" bash android/build.sh --locked --abi arm64-v8a --out ../out/EQOA-Sandstorm-477M.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eqoa-sandstorm-477m
+          path: out/EQOA-Sandstorm-477M.apk
