@@ -5,3 +5,4 @@ apps/*/app/src/main/jniLibs/
 
 # made at build time from a Daijishou wallpaper pack
 pegasus/theme/Daijishou477M/assets/wallpapers/
+__pycache__/
