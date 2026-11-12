@@ -81,6 +81,15 @@ PHANTASY STAR ONLINE EPISODE I & II ON SCHTSERV
    If you keep getting error 102: turn on the cheat "SCHTSERV: fix error 102" for
    your version in PSO's game settings, and Enable Cheats in Dolphin's settings.
 
+PHANTASY STAR ONLINE (DREAMCAST) ON SYLVERANT
+   Flycast 477M boots PSO on the emulated modem through DCNet, which is
+   how Ives' patched PSO Ver. 2 reaches Sylverant on its own.
+   1. Put Ives' patched PSO image in ROMs/dc and start it from the Dreamcast card.
+   2. Enter your serial number and access key when PSO asks (the one on your
+      disc's case; a shared public key works but must never be registered on
+      Sylverant's site).
+   3. Choose Online. Don't use save states, fast forward or the menu while online.
+
 MORROWIND WITH THE EXPANDED VANILLA MOD LIST
    On your PC, run RG477M-Morrowind.ps1 (GammaOSNext/ports/openmw). It makes
    C:\Morrowind477M\Morrowind Android and a zip of it; put that folder in the
