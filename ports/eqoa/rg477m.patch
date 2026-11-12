@@ -1,5 +1,5 @@
 diff --git a/android/AndroidManifest.xml b/android/AndroidManifest.xml
-index 17dc576..0f4dc95 100644
+index 17dc576..7815106 100644
 --- a/android/AndroidManifest.xml
 +++ b/android/AndroidManifest.xml
 @@ -3,7 +3,7 @@
@@ -21,7 +21,7 @@ index 17dc576..0f4dc95 100644
      <!-- allowBackup off: the settings name the player's account -->
      <application
 -        android:label="EQOA"
-+        android:label="EQOA Sandstorm"
++        android:label="EQOA 477M"
          android:icon="@mipmap/ic_launcher"
          android:roundIcon="@mipmap/ic_launcher"
          android:hasCode="true"
@@ -35,7 +35,7 @@ index 17dc576..0f4dc95 100644
              android:launchMode="singleTask"
              android:screenOrientation="sensorLandscape"
 diff --git a/android/java/io/github/dabdavis/eqoa/EqoaActivity.java b/android/java/io/github/dabdavis/eqoa/EqoaActivity.java
-index 14d8aea..8892328 100644
+index 1d0cfd6..47e4bea 100644
 --- a/android/java/io/github/dabdavis/eqoa/EqoaActivity.java
 +++ b/android/java/io/github/dabdavis/eqoa/EqoaActivity.java
 @@ -9,8 +9,10 @@ import android.hardware.input.InputManager;
@@ -130,21 +130,8 @@ index 14d8aea..8892328 100644
          // a controller's buttons and d-pad: the controller's state
          if (fromPad(e) && (KeyEvent.isGamepadButton(code) || code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN
                  || code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT)) {
-diff --git a/crates/eqoa/src/settings.rs b/crates/eqoa/src/settings.rs
-index 6cd210b..cd87141 100644
---- a/crates/eqoa/src/settings.rs
-+++ b/crates/eqoa/src/settings.rs
-@@ -319,7 +319,7 @@ const SERVER_FILE: &str = "server.opt";
- /// client. apk users reporting they cannot login"): natively alone, as a page
- /// is told its own (`web`'s `server` option) and another site's page must not
- /// be sent here.
--pub const DEFAULT_SERVER: &str = "eqoaclassic.com";
-+pub const DEFAULT_SERVER: &str = "eqoa.live";
- 
- /// The server the title's Network Setup keeps (`server.opt`: the address
- /// alone, a host name or IPv4 address), if one was set; a blank one kept is
 diff --git a/crates/eqoa/src/texpack.rs b/crates/eqoa/src/texpack.rs
-index 7e71822..915e43d 100644
+index cc5addd..745aac1 100644
 --- a/crates/eqoa/src/texpack.rs
 +++ b/crates/eqoa/src/texpack.rs
 @@ -266,7 +266,12 @@ pub fn place() -> Option<Place> {
@@ -162,10 +149,10 @@ index 7e71822..915e43d 100644
      if let Some(from) = &p.moved {
          crate::say(&format!("textures: {} moved to {}, beside the program", from.display(), p.dir.display()));
 diff --git a/crates/eqoa/src/viewer.rs b/crates/eqoa/src/viewer.rs
-index 400f63e..551d53a 100644
+index 29c74b3..2dc1bfb 100644
 --- a/crates/eqoa/src/viewer.rs
 +++ b/crates/eqoa/src/viewer.rs
-@@ -1521,7 +1521,11 @@ fn touch_first() -> bool {
+@@ -1604,7 +1604,11 @@ fn touch_first() -> bool {
      if crate::web::touch_first() {
          return true;
      }

@@ -123,9 +123,9 @@ PORTS = [
      "MobileUO 477M set up for UOAlive, with controller play."),
     ("Old School RuneScape", "Old School RuneScape", "osrs477m", "com.rg477m.osrspad/com.rg477m.osrspad.PlayActivity", "",
      "The official Old School RuneScape app, opened through OSRS Pad 477M for controller play."),
-    ("EverQuest Online Adventures", "EverQuest Online Adventures (Sandstorm)", "eqoa477m",
+    ("EverQuest Online Adventures", "EverQuest Online Adventures", "eqoa477m",
      "io.github.atrolle224.eqoa477m/io.github.dabdavis.eqoa.EqoaActivity", "",
-     "EQOA Sandstorm 477M, the native EQOA client on eqoa.live; pick your Frontiers disc image in it once."),
+     "EQOA 477M, the native EQOA client (eqoaclassic.com, as the browser client; Sandstorm in Network Setup); pick your Frontiers disc image in it once."),
 ]
 
 
