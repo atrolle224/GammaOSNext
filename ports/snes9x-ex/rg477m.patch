@@ -44,3 +44,18 @@ index 23c148b..dcfbe22 100644
  	};
  
  	static constexpr std::array wiimoteMap
+diff --git a/imagine/cmake/config.cmake b/imagine/cmake/config.cmake
+index 9b184b0..3506357 100644
+--- a/imagine/cmake/config.cmake
++++ b/imagine/cmake/config.cmake
+@@ -58,8 +58,9 @@ function(generateConfigHeader target)
+ 	set(genDir "${CMAKE_BINARY_DIR}/gen")
+ 	set(configFilePath "${genDir}/${configFilename}")
+ 	message("Config Header: ${configFilePath}")
++	# the COMMANDs of one execute_process run at once, as a pipeline, so mkdir first on its own
++	file(MAKE_DIRECTORY ${genDir})
+ 	execute_process(
+-		COMMAND mkdir -p ${genDir}
+ 		COMMAND bash ${IMAGINE_PATH}/make/writeConfig.sh "${configFilePath}" "${configEnable}" "${configDisable}" "${configInc}" "${configDefs}"
+ 		COMMAND_ERROR_IS_FATAL ANY
+ 	)	
