@@ -84,7 +84,7 @@ PHANTASY STAR ONLINE EPISODE I & II ON SCHTSERV
 PHANTASY STAR ONLINE (DREAMCAST) ON SYLVERANT
    Flycast 477M boots PSO on the emulated modem through DCNet, which is
    how Ives' patched PSO Ver. 2 reaches Sylverant on its own.
-   1. Put Ives' patched PSO image in ROMs/dc and start it from the Dreamcast card.
+   1. Put Ives' patched PSO image in ROMs/dreamcast and start it from the Dreamcast card.
    2. Enter your serial number and access key when PSO asks (the one on your
       disc's case; a shared public key works but must never be registered on
       Sylverant's site).
