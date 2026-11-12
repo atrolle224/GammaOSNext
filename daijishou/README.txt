@@ -44,6 +44,18 @@ Daijishou with every emulator and port wired to the RG477M builds. No root neede
    and the controller mapper. Games it knows get a controller layout by
    themselves; the right stick is the mouse.
 
+   WINDOWS 98 (DOSBox Pure, games that say "must be run under Windows"):
+   ROMs/win98 has its own settings (64 MB, a fast Pentium, S3 video, Voodoo 3D).
+   a. Put your Windows 98 SE CD image (.iso, or .cue/.bin) in ROMs/win98 and start
+      it from the Windows 98 card. In DOSBox Pure's menu choose
+      "[ Boot and Install New Operating System ]", then a 2 GB disk.
+   b. Windows setup runs (about 30-60 minutes); type your product key when asked.
+      The installed Windows is kept in RetroArch/system as a .img file.
+   c. For each game: put its CD image or .zip in ROMs/win98, start it, choose
+      "[ Run Installed Operating System ]" and install it from the CD (D: is the
+      game's files, E: its CD). Start it the same way afterwards.
+   Right stick = mouse, R2/L2 = mouse buttons, L3 = on-screen keyboard and menu.
+
 5. LOOK AND FEEL
    - Wallpapers: Epic ArtBook Noir (by Jamesinorbit, from Daijishou's gallery).
      In Daijishou's settings, open Wallpaper packs and download Epic ArtBook

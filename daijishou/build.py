@@ -209,5 +209,27 @@ for folder, title, uid, component, extra, desc in PORTS:
         f.write(f"Daijishou placeholder: {title}\n")
     written.append((fname, folder, data["playerList"][0]["name"]))
 
+# Windows 98 in DOSBox Pure: its own folder, so RetroArch loads config/DOSBox-pure/win98.opt
+# (a content directory's core options) for the games in it
+win98 = ra_player([], "win98", "dosbox_pure", "DOSBox Pure", DOS_REGEX)
+data = {
+    "databaseVersion": 14,
+    "revisionNumber": 1,
+    "platform": {
+        "name": "Windows 98", "uniqueId": "win98.rg477m", "shortname": "win98",
+        "description": ("Windows 95/98 games in DOSBox Pure with a Windows 98 installed once. Put your "
+                        "Windows 98 CD image and the games' CD images or zips in ROMs/win98."),
+        "acceptedFilenameRegex": DOS_REGEX,
+        "scraperSourceList": [], "boxArtAspectRatioId": 1, "useCustomBoxArtAspectRatio": False,
+        "customBoxArtAspectRatio": None, "screenAspectRatioId": 1, "useCustomScreenAspectRatio": False,
+        "customScreenAspectRatio": None, "retroAchievementsConsoleIdList": [], "extra": "",
+    },
+    "playerList": [win98],
+}
+with open(os.path.join(platforms_out, "Windows 98.json"), "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+os.makedirs(os.path.join(roms_out, "win98"), exist_ok=True)
+written.append(("Windows 98.json", "win98", win98["name"]))
+
 for name, folder, first in written:
     print(f"{name:42} ROMs/{folder:22} default: {first}")
