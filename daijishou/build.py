@@ -34,6 +34,8 @@ DOLPHIN_MMJR2 = ("org.dolphinemu.mmjr.rg477m", "Dolphin MMJR2 477M",
                  "Dolphin MMJR2 with the RG477M defaults; PSO Episode I & II starts on SCHTSERV.")
 DOLPHIN_477M = ("org.dolphinemu.dolphinemu.rg477m", "Dolphin 477M",
                 "Dolphin 477M: RetroAchievements, RG477M defaults, PSO on SCHTSERV.")
+PRIMEHACK_477M = ("org.dolphinemu.primehack.rg477m", "PrimeHack 477M",
+                  "PrimeHack 477M: Metroid Prime 1-3 and Trilogy with right-stick aiming.")
 
 
 def dolphin(short):
@@ -44,6 +46,9 @@ def dolphin(short):
          " -a android.intent.action.MAIN\n -e AutoStartFile {file.path}", regex),
         (f"{short}.rg477m.dolphin", f"{short} - {DOLPHIN_477M[1]}", DOLPHIN_477M[2],
          f"-n {DOLPHIN_477M[0]}/org.dolphinemu.dolphinemu.ui.main.MainActivity\n"
+         " -a android.intent.action.MAIN\n -e AutoStartFile {file.uri}", regex),
+        (f"{short}.rg477m.primehack", f"{short} - {PRIMEHACK_477M[1]}", PRIMEHACK_477M[2],
+         f"-n {PRIMEHACK_477M[0]}/org.dolphinemu.dolphinemu.ui.main.MainActivity\n"
          " -a android.intent.action.MAIN\n -e AutoStartFile {file.uri}", regex),
     ]
 

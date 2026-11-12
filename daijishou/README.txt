@@ -14,6 +14,8 @@ Daijishou with every emulator and port wired to the RG477M builds. No root neede
    - The APKs in the APKs folder you use. GameCube and Wii start Dolphin MMJR2
      477M; Dolphin 477M is the second player there. Both have RetroAchievements
      (MMJR2: Settings > Config > General > RetroAchievements Account).
+     PrimeHack 477M is the third player, for the Metroid Prime games: long-press
+     a Prime game, Set player, PrimeHack 477M. Right stick aims, R2 fires.
 
 2. COPY THE FOLDERS
    - "Internal storage" goes to the root of internal storage (you get /RetroArch).
