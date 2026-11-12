@@ -130,8 +130,208 @@ index 1d0cfd6..47e4bea 100644
          // a controller's buttons and d-pad: the controller's state
          if (fromPad(e) && (KeyEvent.isGamepadButton(code) || code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN
                  || code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT)) {
+diff --git a/crates/eqoa/src/pregame/setup/netsetup.rs b/crates/eqoa/src/pregame/setup/netsetup.rs
+index 338557c..8fbcd58 100644
+--- a/crates/eqoa/src/pregame/setup/netsetup.rs
++++ b/crates/eqoa/src/pregame/setup/netsetup.rs
+@@ -28,6 +28,13 @@ const HINT: &str = "A host name or an IPv4 address";
+ const BAD: &str = "That is not a server address. Enter a host name (eqoa.example.com) or an IPv4 address (192.0.2.10), or leave it blank for none.";
+ const NONE: &str = "(none)";
+ 
++/// RG477M: the servers to pick from (Left/Right on the Preset row); the EMU
++/// beta's address is typed once and kept (`settings::emu_beta`).
++const PRESET: &str = "Preset";
++const PRESETS: [(&str, Option<&str>); 3] = [("eqoaclassic.com", Some("eqoaclassic.com")), ("Sandstorm", Some("eqoa.live")), ("EMU beta", None)];
++const CUSTOM: &str = "Custom";
++const EMU_TITLE: &str = "EMU beta server";
++
+ /// The longest address the edit box takes (the terminator counts).
+ const MAX_LEN: usize = 64;
+ 
+@@ -63,6 +70,7 @@ pub enum NetUp {
+ const ROW: i32 = 0;
+ const SELECT: i32 = 1;
+ const BACK: i32 = 2;
++const PRESET_ROW: i32 = 3;
+ 
+ #[derive(Default)]
+ pub struct NetSetup {
+@@ -73,6 +81,15 @@ pub struct NetSetup {
+     hits: Hits,
+     /// the address shown
+     pub address: String,
++    /// the row chosen: 0 the server, 1 the preset
++    sel: i32,
++    /// the edit box is on the EMU beta's address
++    editing_emu: bool,
++}
++
++/// The preset `address` is, if one.
++fn preset_of(address: &str) -> Option<usize> {
++    PRESETS.iter().position(|&(_, host)| host.map(str::to_string).or_else(crate::settings::emu_beta).is_some_and(|h| h.eq_ignore_ascii_case(address)))
+ }
+ 
+ impl NetSetup {
+@@ -81,7 +98,9 @@ impl NetSetup {
+     pub fn open(&mut self, vui: &Vui, r: &dyn Layout, current: Option<&str>) {
+         self.address = current.unwrap_or("").to_string();
+         self.window.close(true);
+-        self.window.init(vui, r, [320, 246], 440, 5, 0);
++        self.window.init(vui, r, [320, 246], 440, 6, 0);
++        self.sel = 1;
++        self.editing_emu = false;
+         self.window.set_title(Some(&wide(vui.words.get(1635, vui.language))));
+         self.window.open(false);
+         self.editing = false;
+@@ -96,7 +115,7 @@ impl NetSetup {
+         e.set_max_length(MAX_LEN);
+         e.set_center([320, 300]);
+         e.set_text(&wide(&self.address));
+-        e.title = wide(SERVER);
++        e.title = wide(if self.editing_emu { EMU_TITLE } else { SERVER });
+         e.purpose = 0;
+         e.focus(now);
+         self.editing = true;
+@@ -117,17 +136,44 @@ impl NetSetup {
+                         self.message.setup(vui, r, &wide(vui.words.get(767, vui.language)), &wide(BAD), PROMPT_OK, [320, 246], 400);
+                         return NetUp::None;
+                     }
++                    if std::mem::take(&mut self.editing_emu) && !typed.is_empty() {
++                        let _ = crate::settings::set_emu_beta(&typed);
++                    }
+                     self.address = typed.clone();
+                     return NetUp::Kept((!typed.is_empty()).then_some(typed));
+                 }
+-                EditUp::Cancel => self.editing = false,
++                EditUp::Cancel => {
++                    self.editing = false;
++                    self.editing_emu = false;
++                }
+                 EditUp::None => {}
+             }
+             return NetUp::None;
+         }
+         match k {
++            19 | 20 | key::UP | key::DOWN => {
++                cues.push(11);
++                self.sel ^= 1;
++            }
++            17 | 18 | key::LEFT | key::RIGHT if self.sel == 1 => {
++                cues.push(11);
++                let n = PRESETS.len() as i32;
++                let step = if k == 17 || k == key::LEFT { n - 1 } else { 1 };
++                let next = preset_of(&self.address).map_or(0, |i| (i as i32 + step) % n) as usize;
++                self.address = PRESETS[next].1.map(str::to_string).or_else(crate::settings::emu_beta).unwrap_or_default();
++                if self.address.is_empty() {
++                    // the EMU beta with no address yet: type it
++                    self.editing_emu = true;
++                    self.begin_edit(now);
++                }
++            }
++            13 | key::CROSS if self.sel == 1 && !self.address.is_empty() => {
++                cues.push(15);
++                return NetUp::Kept(Some(self.address.clone()));
++            }
+             13 | key::CROSS => {
+                 cues.push(15);
++                self.editing_emu = preset_of(&self.address) == Some(2);
+                 self.begin_edit(now);
+             }
+             27 | key::TRIANGLE => {
+@@ -156,7 +202,7 @@ impl NetSetup {
+         let width = self.window.size[0];
+         let c = UI_COLORS[1];
+         self.window.text_box(vui, r, &wide(SERVER), 40, 1, 90, 1, c, 0);
+-        self.window.tick_r(vui, r, 36, 1, true);
++        self.window.tick_r(vui, r, 36, if self.sel == 0 { 1 } else { 3 }, true);
+         let shown = if self.address.is_empty() { NONE } else { &self.address };
+         // the value in its frame, cut with an ellipsis when it is long
+         let (vx, vw) = (140, width - 140 - 40);
+@@ -164,13 +210,18 @@ impl NetSetup {
+         self.window.text_box(vui, r, &wide(shown), vx, 1, vw, 1, UI_COLORS[0], 2);
+         self.window.text_box(vui, r, &wide(HINT), 40, 2, width - 80, 1, UI_COLORS[2], 0);
+         let w = |id: i32| vui.words.get(id, vui.language).to_string();
++        let preset = preset_of(&self.address).map_or(CUSTOM, |i| PRESETS[i].0);
++        self.window.text_box(vui, r, &wide(PRESET), 40, 3, 90, 1, c, 0);
++        self.window.draw_frame(vui, r, vx, 3, vw, 1, 64);
++        self.window.text_box(vui, r, &wide(&format!("<  {preset}  >")), vx, 3, vw, 1, UI_COLORS[0], 2);
+         let legend = wide(&format!("|x {}   |t {}", w(212), w(750)));
+-        self.window.text(vui, r, &legend, 40, 4, UI_COLORS[0], 0);
++        self.window.text(vui, r, &legend, 40, 5, UI_COLORS[0], 0);
+         self.hits.clear();
+         self.hits.push(rows_rect(&self.window, vui, r, 40, 1, width - 80, 1), ROW);
++        self.hits.push(rows_rect(&self.window, vui, r, 40, 3, width - 80, 1), PRESET_ROW);
+         let half = (width - 80) / 2;
+-        self.hits.push(rows_rect(&self.window, vui, r, 40, 4, half, 1), SELECT);
+-        let mut back = rows_rect(&self.window, vui, r, 40 + half, 4, half, 1);
++        self.hits.push(rows_rect(&self.window, vui, r, 40, 5, half, 1), SELECT);
++        let mut back = rows_rect(&self.window, vui, r, 40 + half, 5, half, 1);
+         back[0] = self.window.top_left()[0] + 40 + half;
+         self.hits.push(back, BACK);
+         if self.editing {
+@@ -191,6 +242,9 @@ impl NetSetup {
+             return self.edit.point(p).flatten().into_iter().collect();
+         }
+         match self.hits.at(p) {
++            Some(ROW) if self.sel == 1 => vec![key::UP, key::CROSS],
++            Some(PRESET_ROW) if self.sel == 0 => vec![key::DOWN],
++            Some(PRESET_ROW) => vec![key::RIGHT],
+             Some(ROW | SELECT) => vec![key::CROSS],
+             Some(BACK) => vec![key::TRIANGLE],
+             _ => Vec::new(),
+@@ -217,6 +271,7 @@ mod tests {
+         let (v, r) = (vui(), NullRaster);
+         let mut n = NetSetup::default();
+         n.open(&v, &r, Some("192.0.2.1"));
++        n.sel = 0;
+         (n, v, r)
+     }
+ 
+@@ -263,6 +318,7 @@ mod tests {
+         for cancel in [27, key::TRIANGLE] {
+             let (mut m, v, mut r) = page();
+             m.key(&v, &mut r, key::CROSS, 0, &mut cues);
++            assert!(m.editing);
+             m.key(&v, &mut r, b'x' as i32, 0, &mut cues);
+             assert_eq!(m.key(&v, &mut r, cancel, 0, &mut cues), NetUp::None);
+             assert!(!m.editing);
+@@ -270,6 +326,25 @@ mod tests {
+         }
+     }
+ 
++    /// RG477M: Right on the Preset row steps eqoaclassic.com, Sandstorm, then
++    /// the EMU beta, whose address is asked for while none is kept; X keeps
++    /// the one shown. The control: Right on the server row changes nothing.
++    #[test]
++    fn presets_step_and_x_keeps_one() {
++        let (mut n, v, mut r) = page();
++        let mut cues = Vec::new();
++        n.key(&v, &mut r, key::RIGHT, 0, &mut cues);
++        assert_eq!(n.address, "192.0.2.1", "the server row has no presets");
++        n.key(&v, &mut r, key::DOWN, 0, &mut cues);
++        n.key(&v, &mut r, key::RIGHT, 0, &mut cues);
++        assert_eq!(n.address, "eqoaclassic.com");
++        n.key(&v, &mut r, key::RIGHT, 0, &mut cues);
++        assert_eq!(n.address, "eqoa.live");
++        assert_eq!(n.key(&v, &mut r, key::CROSS, 0, &mut cues), NetUp::Kept(Some("eqoa.live".into())));
++        n.key(&v, &mut r, key::LEFT, 0, &mut cues);
++        assert_eq!(n.address, "eqoaclassic.com");
++    }
++
+     /// A pointer: the row opens the edit box (X), Back closes (Triangle).
+     #[test]
+     fn a_pointer_opens_the_row_and_goes_back() {
+@@ -278,7 +353,7 @@ mod tests {
+         let row = rows_rect(&n.window, &v, &r, 140, 1, 100, 1);
+         assert_eq!(n.point(mid(row)), vec![key::CROSS]);
+         let w = n.window.size[0];
+-        let back = rows_rect(&n.window, &v, &r, 40 + (w - 80) / 2 + 30, 4, 40, 1);
++        let back = rows_rect(&n.window, &v, &r, 40 + (w - 80) / 2 + 30, 5, 40, 1);
+         assert_eq!(n.point(mid(back)), vec![key::TRIANGLE]);
+         // the control: without the hit notes, nothing
+         n.hits.clear();
 diff --git a/crates/eqoa/src/settings.rs b/crates/eqoa/src/settings.rs
-index 628939a..56f6e4e 100644
+index 628939a..8369e27 100644
 --- a/crates/eqoa/src/settings.rs
 +++ b/crates/eqoa/src/settings.rs
 @@ -533,7 +533,7 @@ const SERVER_FILE: &str = "server.opt";
@@ -143,6 +343,25 @@ index 628939a..56f6e4e 100644
  
  /// The server the title's Network Setup keeps (`server.opt`: the address
  /// alone, a host name or IPv4 address), if one was set; a blank one kept is
+@@ -556,6 +556,18 @@ pub fn set_server(s: &str) -> Result<(), String> {
+     store::write(SERVER_FILE, s.trim().as_bytes())
+ }
+ 
++/// RG477M: Network Setup's EMU beta preset, the address typed for it once
++/// (`emubeta.opt`; its address is not public).
++const EMU_BETA_FILE: &str = "emubeta.opt";
++
++pub fn emu_beta() -> Option<String> {
++    store::read(EMU_BETA_FILE).map(|b| String::from_utf8_lossy(&b).trim().to_string()).filter(|s| !s.is_empty())
++}
++
++pub fn set_emu_beta(s: &str) -> Result<(), String> {
++    store::write(EMU_BETA_FILE, s.trim().as_bytes())
++}
++
+ // ---- the client's own: the disc image, as the player picked it (natively) --------
+ 
+ const DISC_FILE: &str = "disc.opt";
 diff --git a/crates/eqoa/src/texpack.rs b/crates/eqoa/src/texpack.rs
 index cc5addd..745aac1 100644
 --- a/crates/eqoa/src/texpack.rs
