@@ -33,7 +33,7 @@ Daijishou with every emulator and port wired to the RG477M builds. No root neede
    Start one RetroArch game from Daijishou, then in RetroArch:
    - Main Menu > Online Updater > Core Downloader: gambatte, mgba, fceumm,
      snes9x, genesis_plus_gx, mednafen_ngp, swanstation, pcsx_rearmed,
-     dosbox_pure (DOS).
+     dosbox_pure (DOS), mupen64plus_next (N64, "Mupen64Plus-Next GLES3").
    - Settings > Achievements > sign in to RetroAchievements (it is already on).
    RetroArch games from Daijishou use /RetroArch/retroarch.cfg, with the RG477M
    controller profile; BIOS files go in /RetroArch/system (Sega CD: bios_CD_U.bin;

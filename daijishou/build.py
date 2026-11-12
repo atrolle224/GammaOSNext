@@ -22,9 +22,10 @@ RA = "com.retroarch.rg477m"
 RA_CFG = "/storage/emulated/0/RetroArch/retroarch.cfg"
 
 
-def retroarch(short, core, label):
-    """RetroArch 477M with <core>, from the official RetroArch (aarch64) player for it."""
-    return ("ra", short, core, label)
+def retroarch(short, core, label, regex=None):
+    """RetroArch 477M with <core>, from the official RetroArch (aarch64) player for it (or <regex>
+    when Daijishou has none)."""
+    return ("ra", short, core, label, regex)
 
 
 # platform file: (ROM folder, [players]); a player is (unique id, name, description, am start
@@ -51,7 +52,7 @@ DOS_REGEX = r"^(.*)\.(?:zip|dosz|dosc|conf|exe|com|bat|iso|cue|img|ima|vhd|m3u|m
 
 SETUP = {
     # found by its short name, as the file's name may change between Daijishou versions
-    "shortname:dos": ("dos", [retroarch("dos", "dosbox_pure", "DOSBox Pure")]),
+    "shortname:dos": ("dos", [retroarch("dos", "dosbox_pure", "DOSBox Pure", DOS_REGEX)]),
     "NintendoGameBoy.json": ("gb", [retroarch("gb", "gambatte", "gambatte")]),
     "NintendoGameBoyColor.json": ("gbc", [retroarch("gbc", "gambatte", "gambatte")]),
     "NintendoGameBoyAdvance.json": ("gba", [retroarch("gba", "mgba", "mGBA")]),
@@ -69,6 +70,9 @@ SETUP = {
     "SonyPlayStation.json": ("psx", [retroarch("psx", "swanstation", "SwanStation"),
                                      retroarch("psx", "pcsx_rearmed", "PCSX ReARMed")]),
     "Nintendo64.json": ("n64", [
+        # RetroAchievements: RetroArch's Mupen64Plus-Next (the Android core is its GLES3 build)
+        retroarch("n64", "mupen64plus_next_gles3", "Mupen64Plus-Next",
+                  r"^(.*)\.(?:n64|v64|z64|ndd|u1|bin|zip|7z)$"),
         ("n64.rg477m.m64plusfz", "n64 - M64Plus FZ 477M", "M64Plus FZ 477M (org.mupen64plusae.v3.fzurita.rg477m).",
          "-n org.mupen64plusae.v3.fzurita.rg477m/paulscode.android.mupen64plusae.SplashActivity\n"
          " -a android.intent.action.VIEW\n -d {file.uri}", None)]),
@@ -126,10 +130,10 @@ def player(uid, name, desc, args, regex):
             "killPackageProcessesWarning": False, "extra": ""}
 
 
-def ra_player(official, short, core, label):
+def ra_player(official, short, core, label, regex=None):
     base = next((p for p in official if p["uniqueId"] == f"{short}.ra64.{core}"), None)
-    if base is None and short == "dos":
-        base = {"acceptedFilenameRegex": DOS_REGEX}
+    if base is None and regex:
+        base = {"acceptedFilenameRegex": regex}
     if base is None:
         sys.exit(f"{short}: no official player {short}.ra64.{core} to start from")
     args = (f"-n {RA}/com.retroarch.browser.retroactivity.RetroActivityFuture\n -e ROM {{file.path}}\n"
