@@ -1,7 +1,7 @@
-name: EQOA 477M
+name: EQOA Sandstorm 477M
 
 # DabDavis/eqoa-rust-client-vanilla's Android app with ports/eqoa/rg477m.patch:
-# its own default server (eqoaclassic.com), texture packs in Internal storage/EQOA,
+# Sandstorm (eqoa.live) as the server, texture packs in Internal storage/EQOA,
 # the touch pad hidden with the built-in controller. Signed with the ports key.
 
 on:
