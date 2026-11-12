@@ -47,7 +47,11 @@ def dolphin(short):
     ]
 
 
+DOS_REGEX = r"^(.*)\.(?:zip|dosz|dosc|conf|exe|com|bat|iso|cue|img|ima|vhd|m3u|m3u8)$"
+
 SETUP = {
+    # found by its short name, as the file's name may change between Daijishou versions
+    "shortname:dos": ("dos", [retroarch("dos", "dosbox_pure", "DOSBox Pure")]),
     "NintendoGameBoy.json": ("gb", [retroarch("gb", "gambatte", "gambatte")]),
     "NintendoGameBoyColor.json": ("gbc", [retroarch("gbc", "gambatte", "gambatte")]),
     "NintendoGameBoyAdvance.json": ("gba", [retroarch("gba", "mgba", "mGBA")]),
@@ -124,6 +128,8 @@ def player(uid, name, desc, args, regex):
 
 def ra_player(official, short, core, label):
     base = next((p for p in official if p["uniqueId"] == f"{short}.ra64.{core}"), None)
+    if base is None and short == "dos":
+        base = {"acceptedFilenameRegex": DOS_REGEX}
     if base is None:
         sys.exit(f"{short}: no official player {short}.ra64.{core} to start from")
     args = (f"-n {RA}/com.retroarch.browser.retroactivity.RetroActivityFuture\n -e ROM {{file.path}}\n"
@@ -132,6 +138,17 @@ def ra_player(official, short, core, label):
                   f"RetroArch 477M with {label}: RetroAchievements on, controllers set up for the RG477M.",
                   args, base["acceptedFilenameRegex"])
 
+
+def by_shortname(short):
+    for fname in sorted(os.listdir(src)):
+        if fname.endswith(".json"):
+            with open(os.path.join(src, fname), encoding="utf-8") as f:
+                if json.load(f).get("platform", {}).get("shortname") == short:
+                    return fname
+    sys.exit(f"no Daijishou platform with the short name {short}")
+
+
+SETUP = {(by_shortname(k[10:]) if k.startswith("shortname:") else k): v for k, v in SETUP.items()}
 
 written = []
 for name, (folder, rules) in SETUP.items():

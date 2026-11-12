@@ -1,0 +1,7 @@
+dosbox_pure_on_screen_keyboard = "true"
+dosbox_pure_auto_mapping = "true"
+dosbox_pure_mouse_input = "true"
+dosbox_pure_aspect_correction = "true"
+dosbox_pure_cycles = "auto"
+dosbox_pure_cpu_core = "auto"
+dosbox_pure_savestate = "on"

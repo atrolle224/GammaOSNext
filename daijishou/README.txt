@@ -32,11 +32,17 @@ Daijishou with every emulator and port wired to the RG477M builds. No root neede
 4. RETROARCH 477M
    Start one RetroArch game from Daijishou, then in RetroArch:
    - Main Menu > Online Updater > Core Downloader: gambatte, mgba, fceumm,
-     snes9x, genesis_plus_gx, mednafen_ngp, swanstation, pcsx_rearmed.
+     snes9x, genesis_plus_gx, mednafen_ngp, swanstation, pcsx_rearmed,
+     dosbox_pure (DOS).
    - Settings > Achievements > sign in to RetroAchievements (it is already on).
    RetroArch games from Daijishou use /RetroArch/retroarch.cfg, with the RG477M
    controller profile; BIOS files go in /RetroArch/system (Sega CD: bios_CD_U.bin;
    PlayStation: scph5501.bin).
+
+   DOS (DOSBox Pure): put each game as a .zip in ROMs/dos (no unzipping needed).
+   L3 opens its menu: the start menu, the on-screen keyboard (L/R switch tabs)
+   and the controller mapper. Games it knows get a controller layout by
+   themselves; the right stick is the mouse.
 
 5. LOOK AND FEEL
    - Wallpapers: Epic ArtBook Noir (by Jamesinorbit, from Daijishou's gallery).
