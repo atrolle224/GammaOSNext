@@ -1,0 +1,46 @@
+diff --git a/EmuFramework/include/emuframework/AppKeyCode.hh b/EmuFramework/include/emuframework/AppKeyCode.hh
+index 65aa84d..291a322 100644
+--- a/EmuFramework/include/emuframework/AppKeyCode.hh
++++ b/EmuFramework/include/emuframework/AppKeyCode.hh
+@@ -84,6 +84,9 @@ inline constexpr std::array genericGamepadAppKeyCodeMap
+ 	KeyMapping{appKeys.openSystemActions, Input::Keycode::GAME_MODE},
+ 	KeyMapping{appKeys.fastForward, Input::Keycode::GAME_R2},
+ 	KeyMapping{appKeys.openMenu, Input::Keycode::BACK},
++	// RG477M: its pad has no Back button; R3 opens the menu, L3 the system actions
++	KeyMapping{appKeys.openMenu, Input::Keycode::GAME_RIGHT_THUMB},
++	KeyMapping{appKeys.openSystemActions, Input::Keycode::GAME_LEFT_THUMB},
+ };
+ 
+ inline constexpr std::array genericGamepadModifierAppKeyCodeMap
+diff --git a/Snes9x/metadata/conf.mk b/Snes9x/metadata/conf.mk
+index 5d49742..53f56f1 100644
+--- a/Snes9x/metadata/conf.mk
++++ b/Snes9x/metadata/conf.mk
+@@ -1,9 +1,9 @@
+ include $(EMUFRAMEWORK_PATH)/metadata/conf.mk
+-metadata_name = Snes9x EX+
++metadata_name = Snes9x EX+ 477M
+ metadata_exec = s9xp
+ metadata_pkgName = Snes9xEXPlus
+ metadata_supportedFileExtensions += smc sfc swc bs st fig mgd
+-metadata_id = com.explusalpha.Snes9xPlus
++metadata_id = com.explusalpha.Snes9xPlus.rg477m
+ metadata_vendor = Robert Broglia
+ pnd_metadata_license = Proprietary
+ pnd_metadata_licenseURL = http://www.explusalpha.com/home/general-info/licenses/snes9x
+diff --git a/Snes9x/src/main/AppMeta.cc b/Snes9x/src/main/AppMeta.cc
+index 23c148b..dcfbe22 100644
+--- a/Snes9x/src/main/AppMeta.cc
++++ b/Snes9x/src/main/AppMeta.cc
+@@ -142,6 +142,11 @@ std::span<const KeyConfigDesc> AppMeta::defaultKeyConfigs()
+ 		KeyMapping{SnesKey::X, Keycode::GAME_Y},
+ 		KeyMapping{SnesKey::L, Keycode::GAME_L1},
+ 		KeyMapping{SnesKey::R, Keycode::GAME_R1},
++		// RG477M: the left stick moves like the D-pad
++		KeyMapping{SnesKey::Up, Keycode::JS1_YAXIS_NEG},
++		KeyMapping{SnesKey::Right, Keycode::JS1_XAXIS_POS},
++		KeyMapping{SnesKey::Down, Keycode::JS1_YAXIS_POS},
++		KeyMapping{SnesKey::Left, Keycode::JS1_XAXIS_NEG},
+ 	};
+ 
+ 	static constexpr std::array wiimoteMap

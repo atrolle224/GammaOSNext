@@ -52,7 +52,11 @@ SETUP = {
     "NintendoGameBoyColor.json": ("gbc", [retroarch("gbc", "gambatte", "gambatte")]),
     "NintendoGameBoyAdvance.json": ("gba", [retroarch("gba", "mgba", "mGBA")]),
     "NintendoEntertainmentSystem.json": ("nes", [retroarch("nes", "fceumm", "FCEUmm")]),
-    "NintendoSNES.json": ("snes", [retroarch("snes", "snes9x", "Snes9x")]),
+    "NintendoSNES.json": ("snes", [
+        ("snes.rg477m.snes9xex", "snes - Snes9x EX+ 477M",
+         "Snes9x EX+ 477M: left stick as D-pad, R3 menu, L3 system actions (com.explusalpha.Snes9xPlus.rg477m).",
+         "-n com.explusalpha.Snes9xPlus.rg477m/com.imagine.BaseActivity\n -a android.intent.action.VIEW\n -d {file.uri}", None),
+        retroarch("snes", "snes9x", "Snes9x")]),
     "SegaMasterSystem.json": ("master", [retroarch("master", "genesis_plus_gx", "Genesis Plus GX")]),
     "SegaGenesis.json": ("genesis", [retroarch("genesis", "genesis_plus_gx", "Genesis Plus GX")]),
     "SegaGameGear.json": ("gamegear", [retroarch("gamegear", "genesis_plus_gx", "Genesis Plus GX")]),

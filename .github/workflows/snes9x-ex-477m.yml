@@ -1,0 +1,90 @@
+name: Snes9x EX+ 477M
+
+# Rakashazi/emu-ex-plus-alpha's Snes9x EX+ with ports/snes9x-ex/rg477m.patch: its own
+# package (installs beside the official app), the left stick as the D-pad, R3 for the
+# menu and L3 for the system actions. Steps follow upstream's build.yml.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Upstream commit (empty = newest)
+        default: ''
+  push:
+    paths:
+      - 'ports/snes9x-ex/**'
+      - '.github/workflows/snes9x-ex-477m.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: gammaosnext
+
+      - name: Upstream source
+        run: |
+          git clone https://github.com/Rakashazi/emu-ex-plus-alpha ex
+          cd ex
+          if [ -n "${{ inputs.ref }}" ]; then git checkout "${{ inputs.ref }}"; fi
+          git log -1 --format='upstream %h %ad %s' --date=short
+          git apply ../gammaosnext/ports/snes9x-ex/rg477m.patch
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends autoconf automake autopoint bash gcc-arm-linux-gnueabi file gawk gettext git libtool libtool-bin make nasm pkg-config unzip wget
+
+      - uses: lukka/get-cmake@latest
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up environment
+        working-directory: ex
+        run: |
+          mkdir imagine-sdk
+          NDK_VERSION='r30-beta1'
+          wget -q "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip"
+          unzip -q android-ndk-${NDK_VERSION}-linux.zip
+          mv android-ndk-${NDK_VERSION} android-ndk
+          echo "ANDROID_NDK_PATH=$PWD/android-ndk" >> "$GITHUB_ENV"
+          echo "EMUFRAMEWORK_PATH=$PWD/EmuFramework" >> "$GITHUB_ENV"
+          echo "IMAGINE_PATH=$PWD/imagine" >> "$GITHUB_ENV"
+          echo "IMAGINE_SDK_PATH=$PWD/imagine-sdk" >> "$GITHUB_ENV"
+
+      - name: Libraries
+        working-directory: ex/imagine/bundle/all
+        run: ./makeAll-android.sh install
+
+      - name: Imagine and EmuFramework
+        run: |
+          $IMAGINE_PATH/android.sh config
+          $IMAGINE_PATH/android.sh installLinks --config Release
+          $EMUFRAMEWORK_PATH/android.sh config
+          $EMUFRAMEWORK_PATH/android.sh installLinks --config Release
+
+      - name: Snes9x EX+
+        working-directory: ex/Snes9x
+        run: make -f android.mk android-apk CONFIG=Release V=1 -j`nproc`
+
+      - name: Sign with the ports key
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          mkdir -p out
+          "$BT/zipalign" -f -p 4 ex/Snes9x/build/android/build/outputs/apk/release/Snes9xEXPlus-release.apk out/aligned.apk
+          "$BT/apksigner" sign --ks gammaosnext/ports/keys/rg477m-ports.keystore --ks-pass pass:android \
+            --ks-key-alias rg477m --out out/Snes9xEXPlus-477M.apk out/aligned.apk
+          "$BT/apksigner" verify out/Snes9xEXPlus-477M.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snes9x-ex-477m
+          path: out/Snes9xEXPlus-477M.apk
