@@ -117,22 +117,26 @@ SETUP = {
 
 # (folder and placeholder name, platform name, unique id, package/activity, extra arguments, description)
 PORTS = [
-    ("Fallout", "Fallout", "fallout477m", "com.alexbatalov.falloutce.rg477m/com.alexbatalov.falloutce.MainActivity", "",
-     "Fallout Community Edition 477M, with your Steam/GOG game files."),
-    ("Fallout 2", "Fallout 2", "fallout2477m", "com.alexbatalov.fallout2ce.rg477m/com.alexbatalov.fallout2ce.MainActivity", "",
-     "Fallout 2 Community Edition 477M, with your Steam/GOG game files."),
-    ("Perfect Dark", "Perfect Dark", "perfectdark477m", "com.perfectdark.port.rg477m/com.perfectdark.port.LauncherActivity", "",
-     "The Perfect Dark port; pick your N64 ROM in its launcher once."),
-    ("Morrowind", "The Elder Scrolls III: Morrowind", "openmw477m", "com.ast.openmw.rg477m/ui.activity.MainActivity",
-     "\n --ez rg477m.autostart true", "OpenMW Mali Mobile with the mod list from RG477M-Morrowind.ps1; starts the game directly."),
-    ("Ultima Online", "Ultima Online (UOAlive)", "ultimaonline477m", "com.mobileuo.mobileuo.rg477m/com.unity3d.player.UnityPlayerActivity", "",
-     "MobileUO 477M set up for UOAlive, with controller play."),
-    ("Old School RuneScape", "Old School RuneScape", "osrs477m", "com.rg477m.osrspad/com.rg477m.osrspad.PlayActivity", "",
-     "The official Old School RuneScape app, opened through OSRS Pad 477M for controller play."),
-    ("EverQuest Online Adventures", "EverQuest Online Adventures (Sandstorm)", "eqoa477m",
+    # (ROMs folder, platform name, id, launch component, extra args, description, game entry's name)
+    ("fallout", "Fallout", "fallout477m", "com.alexbatalov.falloutce.rg477m/com.alexbatalov.falloutce.MainActivity", "",
+     "Fallout Community Edition 477M, with your Steam/GOG game files.", "Fallout"),
+    ("fallout2", "Fallout 2", "fallout2477m", "com.alexbatalov.fallout2ce.rg477m/com.alexbatalov.fallout2ce.MainActivity", "",
+     "Fallout 2 Community Edition 477M, with your Steam/GOG game files.", "Fallout 2"),
+    ("perfectdark", "Perfect Dark", "perfectdark477m", "com.perfectdark.port.rg477m/com.perfectdark.port.LauncherActivity", "",
+     "The Perfect Dark port; pick your N64 ROM in its launcher once.", "Perfect Dark"),
+    ("morrowind", "The Elder Scrolls III: Morrowind", "openmw477m", "com.ast.openmw.rg477m/ui.activity.MainActivity",
+     "\n --ez rg477m.autostart true", "OpenMW Mali Mobile with the mod list from RG477M-Morrowind.ps1; starts the game directly.",
+     "Morrowind"),
+    ("ultimaonline", "Ultima Online (UOAlive)", "ultimaonline477m", "com.mobileuo.mobileuo.rg477m/com.unity3d.player.UnityPlayerActivity", "",
+     "MobileUO 477M set up for UOAlive, with controller play.", "Ultima Online"),
+    ("runescape", "Old School RuneScape", "osrs477m", "com.rg477m.osrspad/com.rg477m.osrspad.PlayActivity", "",
+     "The official Old School RuneScape app, opened through OSRS Pad 477M for controller play.", "Old School RuneScape"),
+    ("eqoa", "EverQuest Online Adventures", "eqoa477m",
      "io.github.atrolle224.eqoa477m/io.github.dabdavis.eqoa.EqoaActivity", "",
-     "EQOA Sandstorm 477M, the native EQOA client on eqoa.live; pick your Frontiers disc image in it once."),
+     "EQOA 477M, the native EQOA client; Sandstorm by default, the server picked in Network Setup's Preset row. "
+     "Pick your Frontiers disc image in it once.", "EverQuest Online Adventures"),
 ]
+PORT_REGEX = r"^(.*)\.(?:port)$"
 
 
 def player(uid, name, desc, args, regex):
@@ -193,31 +197,31 @@ for name, (folder, rules) in SETUP.items():
     os.makedirs(os.path.join(roms_out, folder), exist_ok=True)
     written.append((name, folder, data["playerList"][0]["name"]))
 
-for folder, title, uid, component, extra, desc in PORTS:
+for folder, title, uid, component, extra, desc, game in PORTS:
     data = {
         "databaseVersion": 14,
-        "revisionNumber": 1,
+        "revisionNumber": 2,
         "platform": {
             "name": title, "uniqueId": uid, "shortname": uid,
-            "description": f"{desc} Point this platform at ROMs/{folder}, which holds {folder}.dpt.",
-            "acceptedFilenameRegex": r"^(?!(?:\._|\.).*).*\.dpt$",
+            "description": f"{desc} Point this platform at ROMs/{folder}, which holds {game}.port.",
+            "acceptedFilenameRegex": PORT_REGEX,
             "scraperSourceList": [], "boxArtAspectRatioId": 1, "useCustomBoxArtAspectRatio": False,
             "customBoxArtAspectRatio": None, "screenAspectRatioId": 1, "useCustomScreenAspectRatio": False,
             "customScreenAspectRatio": None, "retroAchievementsConsoleIdList": [], "extra": "",
         },
         "playerList": [player(f"{uid}.play", f"{uid} - {title}", desc, f"-n {component}{extra}\n --activity-clear-task",
-                              r"^(?!(?:\._|\.).*).*\.dpt$")],
+                              PORT_REGEX)],
     }
     if component.startswith("com.rg477m.osrspad/"):
         # killing the package would stop the controller service it hosts
         data["playerList"][0]["killPackageProcesses"] = False
-    fname = "Port - " + folder + ".json"
+    fname = "Port - " + title.replace(":", "") + ".json"
     with open(os.path.join(platforms_out, fname), "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
     d = os.path.join(roms_out, folder)
     os.makedirs(d, exist_ok=True)
-    with open(os.path.join(d, folder + ".dpt"), "w") as f:
-        f.write(f"Daijishou placeholder: {title}\n")
+    with open(os.path.join(d, game + ".port"), "w") as f:
+        f.write(f"Daijishou launches {title} from this file; leave it here.\n")
     written.append((fname, folder, data["playerList"][0]["name"]))
 
 # Windows 98 in DOSBox Pure: its own folder, so RetroArch loads config/DOSBox-pure/win98.opt

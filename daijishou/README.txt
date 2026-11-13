@@ -29,7 +29,20 @@ Daijishou with every emulator and port wired to the RG477M builds. No root neede
    versions). An imported platform has the 477M app as its first player, which
    Daijishou uses unless you pick another.
    Then give each platform its sync path: its folder in ROMs on the SD card
-   (gb, snes, ps2...; a port's own folder, e.g. ROMs/Fallout).
+   (gb, snes, ps2...; a port's own folder, e.g. ROMs/fallout).
+
+   PORT CARDS (Fallout, Fallout 2, Perfect Dark, Morrowind, Ultima Online,
+   Old School RuneScape, EverQuest Online Adventures): each folder holds one
+   .port file, which is the "game" Daijishou shows and launches:
+     ROMs/fallout        Fallout.port
+     ROMs/fallout2       Fallout 2.port
+     ROMs/perfectdark    Perfect Dark.port
+     ROMs/morrowind      Morrowind.port
+     ROMs/ultimaonline   Ultima Online.port
+     ROMs/runescape      Old School RuneScape.port
+     ROMs/eqoa           EverQuest Online Adventures.port
+   If a card shows nothing: check its sync path is that folder, then sync the
+   platform again (Daijishou only lists files after a sync).
 
 4. RETROARCH 477M
    Start one RetroArch game from Daijishou, then in RetroArch:
