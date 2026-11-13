@@ -57,10 +57,17 @@ Daijishou with every emulator and port wired to the RG477M builds. No root neede
    DOS (DOSBox Pure): put each game as a .zip in ROMs/dos (no unzipping needed).
    L3 opens its menu: the start menu, the on-screen keyboard (L/R switch tabs)
    and the controller mapper. Games it knows get a controller layout by
-   themselves; the right stick is the mouse.
+   themselves; others get the keyboard on the pad (d-pad/left stick arrows,
+   Start Enter, Select Esc, A Ctrl, B Alt, X Space, Y Shift).
+   MOUSE ON THE STICK for a game played with the mouse: L3 > Controls >
+   port 1 > "Mouse w/ Left Analog": the left stick moves the pointer, A (the
+   bottom button) clicks, B right-clicks, X middle-clicks, L2/R2 change the
+   pointer's speed. DOSBox Pure keeps the choice for that game.
 
    WINDOWS 98 (DOSBox Pure, games that say "must be run under Windows"):
-   ROMs/win98 has its own settings (64 MB, a fast Pentium, S3 video, Voodoo 3D).
+   ROMs/win98 has its own settings (64 MB, a fast Pentium, S3 video, Voodoo 3D),
+   and the mouse on the left stick from the start: A clicks, B right-clicks,
+   X middle-clicks, L2/R2 pointer speed (config/remaps/DOSBox-pure/win98.rmp).
    a. Put your Windows 98 SE CD image (.iso, or .cue/.bin) in ROMs/win98 and start
       it from the Windows 98 card. In DOSBox Pure's menu choose
       "[ Boot and Install New Operating System ]", then a 2 GB disk.
