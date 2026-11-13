@@ -57,7 +57,13 @@ DOS_REGEX = r"^(.*)\.(?:zip|dosz|dosc|conf|exe|com|bat|iso|cue|img|ima|vhd|m3u|m
 
 SETUP = {
     # found by its short name, as the file's name may change between Daijishou versions
-    "shortname:dos": ("dos", [retroarch("dos", "dosbox_pure", "DOSBox Pure", DOS_REGEX)]),
+    "shortname:dos": ("dos", [
+        retroarch("dos", "dosbox_pure", "DOSBox Pure", DOS_REGEX),
+        # DOSBox Turbo starts no game from outside: it opens, the game runs from its own setup
+        ("dos.rg477m.dosboxturbo", "dos - DOSBox Turbo",
+         "DOSBox Turbo (com.fishstix.dosbox): opens DOSBox Turbo; start the game from its own profile.",
+         "-n com.fishstix.dosbox/com.fishstix.dosbox.DBMain\n -a android.intent.action.VIEW\n -d {file.uri}",
+         DOS_REGEX)]),
     "NintendoGameBoy.json": ("gb", [retroarch("gb", "gambatte", "gambatte")]),
     "NintendoGameBoyColor.json": ("gbc", [retroarch("gbc", "gambatte", "gambatte")]),
     "NintendoGameBoyAdvance.json": ("gba", [retroarch("gba", "mgba", "mGBA")]),
