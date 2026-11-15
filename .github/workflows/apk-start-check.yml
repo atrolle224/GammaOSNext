@@ -12,6 +12,9 @@ on:
       package:
         description: Its package
         default: org.dolphinemu.mmjr.rg477m
+      after:
+        description: A shell command run on the device after the start (adb shell)
+        default: ''
 
 # the setup is a draft release, which only a token that can write sees
 permissions:
@@ -41,6 +44,8 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          AFTER: ${{ inputs.after }}
         with:
           api-level: 34
           arch: x86_64
@@ -53,5 +58,6 @@ jobs:
             adb shell monkey -p ${{ inputs.package }} -c android.intent.category.LAUNCHER 1
             sleep 25
             echo "=== running?"; adb shell pidof ${{ inputs.package }} || echo "not running"
+            if [ -n "$AFTER" ]; then echo "=== after"; adb shell "$AFTER" || true; fi
             echo "=== crash buffer"; adb logcat -d -b crash
             echo "=== app log"; adb logcat -d | grep -iE "AndroidRuntime|FATAL|DEBUG|libc|${{ inputs.package }}|dolphin|linker|UnsatisfiedLink" | tail -150
