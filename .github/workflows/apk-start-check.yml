@@ -12,6 +12,9 @@ on:
       package:
         description: Its package
         default: org.dolphinemu.mmjr.rg477m
+      before:
+        description: A shell command run on the device before the start (adb shell)
+        default: ''
       after:
         description: A shell command run on the device after the start (adb shell)
         default: ''
@@ -46,6 +49,7 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         env:
           AFTER: ${{ inputs.after }}
+          BEFORE: ${{ inputs.before }}
         with:
           api-level: 34
           arch: x86_64
@@ -54,6 +58,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           script: |
             adb install -r -g "${{ inputs.apk }}"
+            if [ -n "$BEFORE" ]; then adb shell "$BEFORE" || true; fi
             adb logcat -c
             adb shell monkey -p ${{ inputs.package }} -c android.intent.category.LAUNCHER 1
             sleep 25
