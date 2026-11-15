@@ -130,6 +130,53 @@ index 1d0cfd6..47e4bea 100644
          // a controller's buttons and d-pad: the controller's state
          if (fromPad(e) && (KeyEvent.isGamepadButton(code) || code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN
                  || code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT)) {
+diff --git a/crates/eqoa/src/options.rs b/crates/eqoa/src/options.rs
+index 1a7f1d3..0f3d61d 100644
+--- a/crates/eqoa/src/options.rs
++++ b/crates/eqoa/src/options.rs
+@@ -909,6 +909,8 @@ impl WndOptions {
+                     // Sun Shadows: cast or not from the next frame, with
+                     // Dynamic Lighting on (`viewer`, `render::sunshadow`)
+                     53 => c.sun_shadows = !c.sun_shadows,
++                    // CRT: from the next frame (`render::scale`)
++                    87 => c.crt = !c.crt,
+                     // Light Shadows: cast or not from the next frame, with
+                     // Dynamic Lighting on (`viewer`, `render::lightshadow`)
+                     56 => c.light_shadows = !c.light_shadows,
+@@ -1641,6 +1643,7 @@ const EXTENDED_ITEMS: [(i32, &str); 70] = [
+     (84, "Loading Tips"),
+     (85, "Quest Markers"),
+     (86, "Power Bars"),
++    (87, "CRT"),
+ ];
+ 
+ /// Slow When Not Focused's item (the GM Jibrish's petition 1634; natively:
+@@ -1769,7 +1772,7 @@ fn lone_category(g: usize) -> Option<usize> {
+ /// HUD when Render Scale came (2026-10-27); Loading Screens to Other's
+ /// General (2026-11-11).
+ #[cfg(not(target_arch = "wasm32"))]
+-const VIDEO: &[i32] = &[33, 13, 14, 26, 39];
++const VIDEO: &[i32] = &[33, 13, 14, 26, 39, 87];
+ #[cfg(target_arch = "wasm32")]
+ const VIDEO: &[i32] = &[13, 14, 26, 39];
+ 
+@@ -1900,6 +1903,7 @@ fn value_text(vui: &Vui, item: i32) -> Option<Vec<u16>> {
+         46 => on_off(c.shadows),
+         47 => wide(if c.ps2_fog { "PS2" } else { "Exact" }),
+         53 => on_off(c.sun_shadows),
++        87 => on_off(c.crt),
+         56 => on_off(c.light_shadows),
+         54 => on_off(c.ambient_occlusion),
+         63 => wide(if c.ps2_particles { "PS2" } else { "Exact" }),
+@@ -3076,7 +3080,7 @@ mod tests {
+         assert_eq!(
+             of(0),
+             vec![
+-                ("Video", vec!["Display", "Brightness", "Frame Rate", "VSync", "Render Scale"]),
++                ("Video", vec!["Display", "Brightness", "Frame Rate", "VSync", "Render Scale", "CRT"]),
+                 ("World", vec!["Fog", "Mipmaps", "Flora", "Environment", "Ground Fog", "Art"]),
+                 ("Lighting", vec!["Dynamic Lighting", "Sun Shadows", "Light Shadows", "Shadow Distance", "Ambient Occlusion", "Particles"]),
+                 ("Characters", vec!["Level of Detail", "NPC/PC Display", "NPC/PC Distance", "Shadows"]),
 diff --git a/crates/eqoa/src/pregame/setup/netsetup.rs b/crates/eqoa/src/pregame/setup/netsetup.rs
 index 338557c..8fbcd58 100644
 --- a/crates/eqoa/src/pregame/setup/netsetup.rs
@@ -331,7 +378,7 @@ index 338557c..8fbcd58 100644
          // the control: without the hit notes, nothing
          n.hits.clear();
 diff --git a/crates/eqoa/src/settings.rs b/crates/eqoa/src/settings.rs
-index 628939a..8369e27 100644
+index 628939a..e8d8e99 100644
 --- a/crates/eqoa/src/settings.rs
 +++ b/crates/eqoa/src/settings.rs
 @@ -533,7 +533,7 @@ const SERVER_FILE: &str = "server.opt";
@@ -362,6 +409,44 @@ index 628939a..8369e27 100644
  // ---- the client's own: the disc image, as the player picked it (natively) --------
  
  const DISC_FILE: &str = "disc.opt";
+@@ -1099,6 +1111,10 @@ pub struct ClientOptions {
+     /// shadows that move with the time of day (`render::sunshadow`); off, the
+     /// sun lights through everything, as the PS2's. Off by default.
+     pub sun_shadows: bool,
++    /// RG477M build: CRT (Extended > Video), CRT Easymode's scanlines and
++    /// aperture grille over the whole picture (`render::scale`); on by
++    /// default on Android.
++    pub crt: bool,
+     /// Light Shadows (Extended > Lighting, 2026-11-09, the user's "sun
+     /// shadows lets make all light sources act similar"): on, and with
+     /// Dynamic Lighting on, the fires', the personal light's and the spells'
+@@ -1316,6 +1332,7 @@ impl Default for ClientOptions {
+             ps2_particles: true,
+             ambient_occlusion: false,
+             sun_shadows: false,
++            crt: cfg!(target_os = "android"),
+             light_shadows: false,
+             shadow_distance: SHADOW_DISTANCE_GAME,
+             dynamic_lighting: false,
+@@ -1497,6 +1514,9 @@ impl ClientOptions {
+         if self.ambient_occlusion {
+             s.push_str("ambient_occlusion=on\n");
+         }
++        if self.crt != cfg!(target_os = "android") {
++            s.push_str(if self.crt { "crt=on\n" } else { "crt=off\n" });
++        }
+         // Sun Shadows only when on
+         if self.sun_shadows {
+             s.push_str("sun_shadows=on\n");
+@@ -1655,6 +1675,8 @@ impl ClientOptions {
+                 ("particles", "exact") => c.ps2_particles = false,
+                 ("ambient_occlusion", "on") => c.ambient_occlusion = true,
+                 ("ambient_occlusion", "off") => c.ambient_occlusion = false,
++                ("crt", "on") => c.crt = true,
++                ("crt", "off") => c.crt = false,
+                 ("sun_shadows", "on") => c.sun_shadows = true,
+                 ("sun_shadows", "off") => c.sun_shadows = false,
+                 ("light_shadows", "on") => c.light_shadows = true,
 diff --git a/crates/eqoa/src/texpack.rs b/crates/eqoa/src/texpack.rs
 index cc5addd..745aac1 100644
 --- a/crates/eqoa/src/texpack.rs
@@ -381,10 +466,18 @@ index cc5addd..745aac1 100644
      if let Some(from) = &p.moved {
          crate::say(&format!("textures: {} moved to {}, beside the program", from.display(), p.dir.display()));
 diff --git a/crates/eqoa/src/viewer.rs b/crates/eqoa/src/viewer.rs
-index 29c74b3..2dc1bfb 100644
+index 29c74b3..ebafbd0 100644
 --- a/crates/eqoa/src/viewer.rs
 +++ b/crates/eqoa/src/viewer.rs
-@@ -1604,7 +1604,11 @@ fn touch_first() -> bool {
+@@ -1397,6 +1397,7 @@ pub fn shot_with(
+     // under `$EQOA_CONFIG` for a shot)
+     renderer.curve.set(crate::settings::curve(crate::settings::client().brightness));
+     renderer.scale.set(crate::settings::client().render_scale as u32);
++    renderer.scale.set_crt(crate::settings::client().crt);
+     render::ui::set_text_filter(crate::settings::client().text);
+     render::ui::set_hud_filter(crate::settings::client().hud);
+     render::set_mipmaps(crate::settings::client().mipmaps);
+@@ -1604,7 +1605,11 @@ fn touch_first() -> bool {
      if crate::web::touch_first() {
          return true;
      }
@@ -397,3 +490,153 @@ index 29c74b3..2dc1bfb 100644
  }
  
  /// A key as the keyboard's dispatch takes it (`App::keyboard`): what it reads
+@@ -3732,6 +3737,7 @@ impl App {
+         render::ui::set_hud_filter(crate::settings::client().hud);
+         render::set_mipmaps(crate::settings::client().mipmaps);
+         g.renderer.scale.set(crate::settings::client().render_scale as u32);
++        g.renderer.scale.set_crt(crate::settings::client().crt);
+         let f = g.renderer.scale.targets(&g.device, &target, &g.depth, size);
+         // the frame cleared black (`SetClearColor(0, 0, 0, 1)`), with CLIENT's
+         // loading screen's gears in its corner while it is up
+@@ -6481,6 +6487,7 @@ impl App {
+                 render::ui::set_hud_filter(crate::settings::client().hud);
+                 render::set_mipmaps(crate::settings::client().mipmaps);
+                 g.renderer.scale.set(crate::settings::client().render_scale as u32);
++                g.renderer.scale.set_crt(crate::settings::client().crt);
+                 let f = g.renderer.scale.targets(&g.device, &target, &g.depth, (g.config.width, g.config.height));
+                 // the ground fog a PS2 frame keeps reads the frame: a target
+                 // that cannot be copied (a page's canvas) draws the scene in
+diff --git a/crates/render/src/scale.rs b/crates/render/src/scale.rs
+index 51a1e83..8c8f4d5 100644
+--- a/crates/render/src/scale.rs
++++ b/crates/render/src/scale.rs
+@@ -55,6 +55,8 @@ pub struct Scale {
+     pending: bool,
+     /// the scale the last frame was drawn at (`drawn`)
+     drawn: u32,
++    /// RG477M build: CRT Easymode's scanlines and mask in `resolve`
++    crt: bool,
+ }
+ 
+ struct Gpu {
+@@ -69,6 +71,7 @@ struct Gpu {
+ struct Frame {
+     size: (u32, u32),
+     k: u32,
++    crt: bool,
+     texture: wgpu::Texture,
+     view: wgpu::TextureView,
+     depth: wgpu::TextureView,
+@@ -86,7 +89,7 @@ pub struct Targets {
+ 
+ impl Scale {
+     pub(crate) fn new(format: wgpu::TextureFormat) -> Self {
+-        Scale { format, want: 1, into_top: false, gpu: None, pending: false, drawn: 1 }
++        Scale { format, want: 1, into_top: false, gpu: None, pending: false, drawn: 1, crt: false }
+     }
+ 
+     /// The scale asked: 1 (the frame drawn at the target's size), 2 or 4.
+@@ -100,6 +103,12 @@ impl Scale {
+         }
+     }
+ 
++    /// The options' CRT: the frame goes through `resolve` even at 1, which
++    /// lays scanlines and a mask over it.
++    pub fn set_crt(&mut self, on: bool) {
++        self.crt = on;
++    }
++
+     pub fn want(&self) -> u32 {
+         self.want
+     }
+@@ -129,7 +138,7 @@ impl Scale {
+         for (at, v) in [(&LAST_W, size.0), (&LAST_H, size.1), (&LAST_MAX, max)] {
+             at.store(v, std::sync::atomic::Ordering::Relaxed);
+         }
+-        if k == 1 && !self.into_top {
++        if k == 1 && !self.into_top && !self.crt {
+             if let Some(g) = &mut self.gpu {
+                 g.frame = None;
+             }
+@@ -138,10 +147,11 @@ impl Scale {
+         }
+         let format = self.format;
+         let g = self.gpu.get_or_insert_with(|| Gpu::new(device, format));
+-        if g.frame.as_ref().is_none_or(|f| f.size != size || f.k != k) {
++        let crt = self.crt;
++        if g.frame.as_ref().is_none_or(|f| f.size != size || f.k != k || f.crt != crt) {
+             // the last one let go before the next is made
+             g.frame = None;
+-            g.frame = Some(Frame::new(device, &g.layout, format, size, k));
++            g.frame = Some(Frame::new(device, &g.layout, format, size, k, crt));
+         }
+         self.pending = true;
+         let f = g.frame.as_ref().expect("made above");
+@@ -187,7 +197,7 @@ impl Scale {
+ }
+ 
+ impl Frame {
+-    fn new(device: &wgpu::Device, layout: &wgpu::BindGroupLayout, format: wgpu::TextureFormat, size: (u32, u32), k: u32) -> Self {
++    fn new(device: &wgpu::Device, layout: &wgpu::BindGroupLayout, format: wgpu::TextureFormat, size: (u32, u32), k: u32, crt: bool) -> Self {
+         let extent = wgpu::Extent3d { width: size.0.max(1) * k, height: size.1.max(1) * k, depth_or_array_layers: 1 };
+         let texture = device.create_texture(&wgpu::TextureDescriptor {
+             label: Some("render scale"),
+@@ -216,7 +226,7 @@ impl Frame {
+             .create_view(&Default::default());
+         let uniform = crate::BufferInit::buffer_init(
+             device,
+-            &wgpu::util::BufferInitDescriptor { label: Some("render scale"), contents: bytemuck::cast_slice(&[k, 0, 0, 0]), usage: wgpu::BufferUsages::UNIFORM },
++            &wgpu::util::BufferInitDescriptor { label: Some("render scale"), contents: bytemuck::cast_slice(&[k, crt as u32, size.1.max(1), 0]), usage: wgpu::BufferUsages::UNIFORM },
+         );
+         let bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
+             label: Some("render scale"),
+@@ -226,7 +236,7 @@ impl Frame {
+                 wgpu::BindGroupEntry { binding: 1, resource: uniform.as_entire_binding() },
+             ],
+         });
+-        Frame { size, k, texture, view, depth, bind }
++        Frame { size, k, crt, texture, view, depth, bind }
+     }
+ }
+ 
+diff --git a/crates/render/src/scale.wgsl b/crates/render/src/scale.wgsl
+index 3f3a541..76ca20c 100644
+--- a/crates/render/src/scale.wgsl
++++ b/crates/render/src/scale.wgsl
+@@ -5,7 +5,7 @@
+ // GPU. Alpha is 1, as the frame's is (its passes write colour only).
+ 
+ @group(0) @binding(0) var frame: texture_2d<f32>;
+-// x: k
++// x: k; y: CRT on (RG477M build); z: the frame's height in target pixels
+ @group(0) @binding(1) var<uniform> scale: vec4<u32>;
+ 
+ // one triangle over the whole target
+@@ -28,5 +28,26 @@ fn fs_main(@builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {
+         }
+     }
+     let n = k * k;
+-    return vec4<f32>(vec3<f32>((sum + vec3<u32>(n / 2u)) / n) / 255.0, 1.0);
++    var col = vec3<f32>((sum + vec3<u32>(n / 2u)) / n) / 255.0;
++    if (scale.y == 1u) {
++        col = crt(col, p.xy, f32(scale.z));
++    }
++    return vec4<f32>(col, 1.0);
++}
++
++// CRT Easymode's scanlines (224, the PS2's 448 a field) and aperture grille
++fn crt(c: vec3<f32>, p: vec2<f32>, height: f32) -> vec3<f32> {
++    let luma = dot(vec3<f32>(0.2126, 0.7152, 0.0722), c);
++    let bright = (max(c.r, max(c.g, c.b)) + luma) * 0.5;
++    let scan = 1.0 - pow(cos(p.y / height * 6.283185307 * 224.0) * 0.5 + 0.5, 1.5);
++    var col = mix(c * scan, c, clamp(bright, 0.35, 0.65));
++    let dot_no = u32(p.x) % 3u;
++    var mask = vec3<f32>(0.7, 0.7, 1.0);
++    if (dot_no == 0u) {
++        mask = vec3<f32>(1.0, 0.7, 0.7);
++    } else if (dot_no == 1u) {
++        mask = vec3<f32>(0.7, 1.0, 0.7);
++    }
++    col = col * mask;
++    return min(pow(col, vec3<f32>(1.0 / 1.8)) * 1.2, vec3<f32>(1.0));
+ }
