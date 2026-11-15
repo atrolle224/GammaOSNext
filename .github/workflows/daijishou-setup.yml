@@ -29,6 +29,19 @@ jobs:
           mv "$out/work/SD card/ROMs" "$out/SD card/ROMs"
           rm -r "$out/work"
           cp -r pegasus/RetroArch "$out/Internal storage/RetroArch"
+          # CRT shaders (Vulkan's slang, GL's glsl) and every Android controller profile
+          ra="$out/Internal storage/RetroArch"
+          for kind in slang glsl; do
+            git clone -q --depth 1 "https://github.com/libretro/$kind-shaders" sh-$kind
+            mkdir -p "$ra/shaders/shaders_$kind"
+            for d in crt blurs include; do
+              [ -d sh-$kind/$d ] && cp -r sh-$kind/$d "$ra/shaders/shaders_$kind/"
+            done
+          done
+          test -f "$ra/shaders/shaders_slang/crt/crt-easymode.slangp"
+          test -f "$ra/shaders/shaders_glsl/crt/crt-easymode.glslp"
+          git clone -q --depth 1 https://github.com/libretro/retroarch-joypad-autoconfig joy
+          cp -n joy/android/*.cfg "$ra/autoconfig/android/"
           find "$out" -name .keep -delete
           python3 daijishou/wallpapers.py dj/themes/platform_wallpapers_packs/EpicArtBookNoir \
             "$out/Daijishou wallpapers/EpicArtBookNoir" "$out/Daijishou platforms"

@@ -31,6 +31,23 @@ Daijishou with every emulator and port wired to the RG477M builds. No root neede
    Then give each platform its sync path: its folder in ROMs on the SD card
    (gb, snes, ps2...; a port's own folder, e.g. ROMs/fallout).
 
+   RETROARCH 477M
+   - The cores for every console here are inside the app, nothing to download.
+   - Internal storage/RetroArch/retroarch.cfg is the one config: the cards and
+     the app's own icon use it. Copying it again logs RetroAchievements out:
+     Settings > Achievements, sign in once (only a token is kept).
+   - CRT look on every core: CRT Easymode (config/global.slangp for Vulkan,
+     global.glslp for GL cores like Mupen64Plus-Next). For CRT Royale (much
+     heavier) or CRT Lottes Fast, point the two files at
+     ../shaders/shaders_slang/crt/crt-royale.slangp (and the glsl one), or
+     Quick Menu > Shaders > Load, then Save > Save Global Preset. Shaders off:
+     Quick Menu > Shaders > Video Shaders off.
+   - Refresh rate: Settings > Video > Output > Screen Resolution lists the
+     screen's modes (60, 90, 120 Hz...) and switches to the one chosen.
+   - Controllers: the built-in controls and any Bluetooth or USB controller
+     (Xbox 360, 8BitDo...) all play as player 1, with RetroArch's controller
+     profiles in RetroArch/autoconfig.
+
    PORT CARDS (Fallout, Fallout 2, Perfect Dark, Morrowind, Ultima Online,
    Old School RuneScape, EverQuest Online Adventures): each folder holds one
    .port file, which is the "game" Daijishou shows and launches:
