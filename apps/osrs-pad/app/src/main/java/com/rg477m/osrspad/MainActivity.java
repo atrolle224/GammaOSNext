@@ -21,6 +21,7 @@ public class MainActivity extends Activity {
     static final String PREFS = "pad";
     static final String KEY_CAPTURE = "capture";
     static final String KEY_SPEED = "speed";
+    static final String KEY_CRT = "crt";
 
     private TextView status;
     private TextView tester;
@@ -90,6 +91,12 @@ public class MainActivity extends Activity {
         capture.setChecked(prefs.getBoolean(KEY_CAPTURE, true));
         capture.setOnCheckedChangeListener((b, on) -> prefs.edit().putBoolean(KEY_CAPTURE, on).apply());
         box.addView(capture);
+
+        CheckBox crt = new CheckBox(this);
+        crt.setText("CRT look: scanlines over the game (from the next time OSRS opens)");
+        crt.setChecked(prefs.getBoolean(KEY_CRT, true));
+        crt.setOnCheckedChangeListener((b, on) -> prefs.edit().putBoolean(KEY_CRT, on).apply());
+        box.addView(crt);
 
         TextView speedLabel = new TextView(this);
         speedLabel.setText("Cursor speed");

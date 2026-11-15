@@ -3,9 +3,12 @@ package com.rg477m.osrspad;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
+import android.graphics.Shader;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
@@ -54,6 +57,7 @@ public class PadAccessibilityService extends AccessibilityService {
     private ImageView cursor;
     private WindowManager.LayoutParams cursorParams;
     private View capture;
+    private View crt;
     private TextView card;
 
     // d-pad keys held (-1/0/1), hat and stick axes from the capture window
@@ -115,6 +119,9 @@ public class PadAccessibilityService extends AccessibilityService {
         }
         active = on;
         if (on) {
+            if (prefs.getBoolean(MainActivity.KEY_CRT, true)) {
+                showCrt();
+            }
             showCursor();
             setCapture(prefs.getBoolean(MainActivity.KEY_CAPTURE, true));
             showCard(MainActivity.controls(), 9000);
@@ -127,6 +134,8 @@ public class PadAccessibilityService extends AccessibilityService {
             setCapture(false);
             removeView(cursor);
             cursor = null;
+            removeView(crt);
+            crt = null;
             removeView(card);
             card = null;
         }
@@ -340,6 +349,34 @@ public class PadAccessibilityService extends AccessibilityService {
         p.gravity = Gravity.TOP | Gravity.START;
         p.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
         return p;
+    }
+
+    /**
+     * A CRT look over OSRS: a dark scanline every third row and a faint
+     * aperture grille, one tiled 3x3 pattern, passing every touch through.
+     */
+    private void showCrt() {
+        if (crt != null) {
+            return;
+        }
+        int[] px = new int[9];
+        int[] grille = {0x0CFF0000, 0x0C00FF00, 0x0C0000FF};
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                px[y * 3 + x] = y == 2 ? 0x5A000000 : grille[x];
+            }
+        }
+        BitmapDrawable tile = new BitmapDrawable(getResources(), Bitmap.createBitmap(px, 3, 3, Bitmap.Config.ARGB_8888));
+        tile.setTileModeXY(Shader.TileMode.REPEAT, Shader.TileMode.REPEAT);
+        tile.setFilterBitmap(false);
+        crt = new View(this);
+        crt.setBackground(tile);
+        WindowManager.LayoutParams p = overlay(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+        p.width = WindowManager.LayoutParams.MATCH_PARENT;
+        p.height = WindowManager.LayoutParams.MATCH_PARENT;
+        if (!addView(crt, p)) {
+            crt = null;
+        }
     }
 
     private void showCursor() {
