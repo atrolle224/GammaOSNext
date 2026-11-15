@@ -1,8 +1,8 @@
-name: Snes9x EX+ 477M
+name: Snes9x EX+ and GBA.emu 477M
 
-# Rakashazi/emu-ex-plus-alpha's Snes9x EX+ with ports/snes9x-ex/rg477m.patch: its own
-# package (installs beside the official app), the left stick as the D-pad, R3 for the
-# menu and L3 for the system actions. Steps follow upstream's build.yml.
+# Rakashazi/emu-ex-plus-alpha's Snes9x EX+ and GBA.emu with ports/snes9x-ex/rg477m.patch:
+# their own packages (beside the official apps), the left stick as the D-pad, R3 for the
+# menu and L3 for the system actions, a CRT overlay. Steps follow upstream's build.yml.
 
 on:
   workflow_dispatch:
@@ -20,6 +20,12 @@ permissions:
 
 jobs:
   apk:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { dir: Snes9x, pkg: Snes9xEXPlus, out: Snes9xEXPlus-477M, artifact: snes9x-ex-477m }
+          - { dir: GBA.emu, pkg: GbaEmu, out: GbaEmu-477M, artifact: gba-emu-477m }
     runs-on: ubuntu-latest
     timeout-minutes: 300
     steps:
@@ -74,20 +80,20 @@ jobs:
           $EMUFRAMEWORK_PATH/android.sh config
           $EMUFRAMEWORK_PATH/android.sh installLinks --config Release
 
-      - name: Snes9x EX+
-        working-directory: ex/Snes9x
+      - name: ${{ matrix.dir }}
+        working-directory: ex/${{ matrix.dir }}
         run: make -f android.mk android-apk CONFIG=Release V=1 -j`nproc`
 
       - name: Sign with the ports key
         run: |
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           mkdir -p out
-          "$BT/zipalign" -f -p 4 ex/Snes9x/build/android/build/outputs/apk/release/Snes9xEXPlus-release.apk out/aligned.apk
+          "$BT/zipalign" -f -p 4 ex/${{ matrix.dir }}/build/android/build/outputs/apk/release/${{ matrix.pkg }}-release.apk out/aligned.apk
           "$BT/apksigner" sign --ks gammaosnext/ports/keys/rg477m-ports.keystore --ks-pass pass:android \
-            --ks-key-alias rg477m --out out/Snes9xEXPlus-477M.apk out/aligned.apk
-          "$BT/apksigner" verify out/Snes9xEXPlus-477M.apk
+            --ks-key-alias rg477m --out out/${{ matrix.out }}.apk out/aligned.apk
+          "$BT/apksigner" verify out/${{ matrix.out }}.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: snes9x-ex-477m
-          path: out/Snes9xEXPlus-477M.apk
+          name: ${{ matrix.artifact }}
+          path: out/${{ matrix.out }}.apk

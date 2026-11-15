@@ -66,7 +66,11 @@ SETUP = {
          DOS_REGEX)]),
     "NintendoGameBoy.json": ("gb", [retroarch("gb", "gambatte", "gambatte")]),
     "NintendoGameBoyColor.json": ("gbc", [retroarch("gbc", "gambatte", "gambatte")]),
-    "NintendoGameBoyAdvance.json": ("gba", [retroarch("gba", "mgba", "mGBA")]),
+    "NintendoGameBoyAdvance.json": ("gba", [
+        retroarch("gba", "mgba", "mGBA"),
+        ("gba.rg477m.gbaemu", "gba - GBA.emu 477M",
+         "GBA.emu 477M: left stick as D-pad, R3 menu, L3 system actions, CRT overlay (com.explusalpha.GbaEmu.rg477m).",
+         "-n com.explusalpha.GbaEmu.rg477m/com.imagine.BaseActivity\n -a android.intent.action.VIEW\n -d {file.uri}", None)]),
     "NintendoEntertainmentSystem.json": ("nes", [retroarch("nes", "fceumm", "FCEUmm")]),
     "NintendoSNES.json": ("snes", [
         ("snes.rg477m.snes9xex", "snes - Snes9x EX+ 477M",

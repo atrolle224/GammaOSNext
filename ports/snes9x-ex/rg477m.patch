@@ -38,6 +38,38 @@ index 42ae8e0..1d32cfd 100644
  	writeOptionValueIfNotDefault(io, CFGKEY_OVERLAY_EFFECT_LEVEL, int8_t(overlayIntensity() * 100.f), 75);
  }
  
+diff --git a/GBA.emu/metadata/conf.mk b/GBA.emu/metadata/conf.mk
+index 086dc9a..4db9c02 100644
+--- a/GBA.emu/metadata/conf.mk
++++ b/GBA.emu/metadata/conf.mk
+@@ -1,8 +1,8 @@
+ include $(EMUFRAMEWORK_PATH)/metadata/conf.mk
+-metadata_name = GBA.emu
++metadata_name = GBA.emu 477M
+ metadata_exec = gbaemu
+ metadata_pkgName = GbaEmu
+ metadata_supportedFileExtensions += gba mb
+-metadata_id = com.explusalpha.GbaEmu
++metadata_id = com.explusalpha.GbaEmu.rg477m
+ metadata_vendor = Robert Broglia
+ pnd_metadata_description = Gameboy Advance emulator using components from VBA-M
+\ No newline at end of file
+diff --git a/GBA.emu/src/main/AppMeta.cc b/GBA.emu/src/main/AppMeta.cc
+index 67275ed..9d0be35 100644
+--- a/GBA.emu/src/main/AppMeta.cc
++++ b/GBA.emu/src/main/AppMeta.cc
+@@ -132,6 +132,11 @@ std::span<const KeyConfigDesc> AppMeta::defaultKeyConfigs()
+ 		KeyMapping{GbaKey::B, Keycode::GAME_X},
+ 		KeyMapping{GbaKey::L, Keycode::GAME_L1},
+ 		KeyMapping{GbaKey::R, Keycode::GAME_R1},
++		// RG477M: the left stick moves like the D-pad
++		KeyMapping{GbaKey::Up, Keycode::JS1_YAXIS_NEG},
++		KeyMapping{GbaKey::Right, Keycode::JS1_XAXIS_POS},
++		KeyMapping{GbaKey::Down, Keycode::JS1_YAXIS_POS},
++		KeyMapping{GbaKey::Left, Keycode::JS1_XAXIS_NEG},
+ 	};
+ 
+ 	static constexpr std::array wiimoteMap
 diff --git a/Snes9x/metadata/conf.mk b/Snes9x/metadata/conf.mk
 index 5d49742..53f56f1 100644
 --- a/Snes9x/metadata/conf.mk
