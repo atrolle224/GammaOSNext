@@ -131,7 +131,7 @@ index 1d0cfd6..47e4bea 100644
          if (fromPad(e) && (KeyEvent.isGamepadButton(code) || code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN
                  || code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT)) {
 diff --git a/crates/eqoa/src/options.rs b/crates/eqoa/src/options.rs
-index 1a7f1d3..0f3d61d 100644
+index 1a7f1d3..8f41490 100644
 --- a/crates/eqoa/src/options.rs
 +++ b/crates/eqoa/src/options.rs
 @@ -909,6 +909,8 @@ impl WndOptions {
@@ -143,6 +143,15 @@ index 1a7f1d3..0f3d61d 100644
                      // Light Shadows: cast or not from the next frame, with
                      // Dynamic Lighting on (`viewer`, `render::lightshadow`)
                      56 => c.light_shadows = !c.light_shadows,
+@@ -1570,7 +1572,7 @@ const CENTER: [i32; 2] = [320, 246];
+ /// Extended's rows, by the item each changes (`change`), and their labels.
+ /// A row is drawn by its item (`value_text`, or `slider_at` for a slider)
+ /// and shown on the page of the category that lists it (`CATEGORIES`).
+-const EXTENDED_ITEMS: [(i32, &str); 70] = [
++const EXTENDED_ITEMS: [(i32, &str); 71] = [
+     (12, "Level of Detail"),
+     (13, "Brightness"),
+     (14, "Frame Rate"),
 @@ -1641,6 +1643,7 @@ const EXTENDED_ITEMS: [(i32, &str); 70] = [
      (84, "Loading Tips"),
      (85, "Quest Markers"),
