@@ -22,7 +22,7 @@ def edit(rel, old, new, count=1):
         f.write(s.replace(old, new))
 
 
-for name in ("Gamepad477M.cs", "ControlsHelp477M.cs"):
+for name in ("Gamepad477M.cs", "ControlsHelp477M.cs", "CrtOverlay477M.cs"):
     shutil.copy(os.path.join(here, name), os.path.join(root, "Assets/Scripts", name))
 
 # Unity's Input System for gamepads, beside the old input that touch and keys use

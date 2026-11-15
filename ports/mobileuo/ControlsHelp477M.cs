@@ -19,7 +19,8 @@ public class ControlsHelp477M : MonoBehaviour
         "Start\tEscape: cancel a target, close\n" +
         "Select\tF12\n" +
         "D-pad\tHotbar F1-F4, hold L1 for F5-F8, hold R1 for F9-F12\n" +
-        "L3\tShow this screen again\n\n" +
+        "L3\tShow this screen again\n" +
+        "Select + L3\tCRT look on / off\n\n" +
         "Set what F1-F12 do in Options > Macros. Both controllers work at once.\n" +
         "Touch the screen to play by touch; move a stick to go back to the controller.\n\n" +
         "Press any button or tap to close";

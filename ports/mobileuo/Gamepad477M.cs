@@ -85,6 +85,12 @@ public static class Gamepad477M
             Cursor.y = Mathf.Clamp(Cursor.y, 0f, Screen.height - 1);
             Moved = true;
         }
+        if (Pressed(pads, p => p.leftStickButton) && Held(pads, p => p.selectButton))
+        {
+            CrtOverlay477M.Toggle();
+            Release();
+            return;
+        }
         if (Pressed(pads, p => p.leftStickButton))
         {
             ControlsHelp477M.Show();
