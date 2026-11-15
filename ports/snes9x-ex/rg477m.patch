@@ -12,6 +12,32 @@ index 65aa84d..291a322 100644
  };
  
  inline constexpr std::array genericGamepadModifierAppKeyCodeMap
+diff --git a/EmuFramework/include/emuframework/EmuVideoLayer.hh b/EmuFramework/include/emuframework/EmuVideoLayer.hh
+index 063b19a..664e0ac 100644
+--- a/EmuFramework/include/emuframework/EmuVideoLayer.hh
++++ b/EmuFramework/include/emuframework/EmuVideoLayer.hh
+@@ -102,7 +102,7 @@ public:
+ 	int16_t portraitOffset{};
+ private:
+ 	ImageEffectId userEffectId{};
+-	ImageOverlayId userOverlayEffectId{};
++	ImageOverlayId userOverlayEffectId{ImageOverlayId::CRT_GRILLE}; // RG477M: a CRT look; Video > Overlay Effect > Off
+ 	Gfx::ColorSpace colSpace{};
+ public:
+ 	Property<uint8_t, CFGKEY_CONTENT_SCALE,
+diff --git a/EmuFramework/src/EmuVideoLayer.cc b/EmuFramework/src/EmuVideoLayer.cc
+index 42ae8e0..1d32cfd 100644
+--- a/EmuFramework/src/EmuVideoLayer.cc
++++ b/EmuFramework/src/EmuVideoLayer.cc
+@@ -429,7 +429,7 @@ void EmuVideoLayer::writeConfig(FileIO &io) const
+ 		writeOptionValue(io, CFGKEY_VIDEO_BRIGHTNESS, brightnessUnscaled);
+ 	writeOptionValueIfNotDefault(io, CFGKEY_GAME_IMG_FILTER, useLinearFilter, true);
+ 	writeOptionValueIfNotDefault(io, CFGKEY_IMAGE_EFFECT, userEffectId, ImageEffectId{});
+-	writeOptionValueIfNotDefault(io, CFGKEY_OVERLAY_EFFECT, userOverlayEffectId, ImageOverlayId{});
++	writeOptionValueIfNotDefault(io, CFGKEY_OVERLAY_EFFECT, userOverlayEffectId, ImageOverlayId::CRT_GRILLE);
+ 	writeOptionValueIfNotDefault(io, CFGKEY_OVERLAY_EFFECT_LEVEL, int8_t(overlayIntensity() * 100.f), 75);
+ }
+ 
 diff --git a/Snes9x/metadata/conf.mk b/Snes9x/metadata/conf.mk
 index 5d49742..53f56f1 100644
 --- a/Snes9x/metadata/conf.mk
