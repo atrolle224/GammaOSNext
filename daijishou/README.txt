@@ -40,8 +40,8 @@ Daijishou with every emulator and port wired to the RG477M builds. No root neede
      global.glslp for GL cores like Mupen64Plus-Next). For CRT Royale (much
      heavier) or CRT Lottes Fast, point the two files at
      ../shaders/shaders_slang/crt/crt-royale.slangp (and the glsl one), or
-     Quick Menu > Shaders > Load, then Save > Save Global Preset. Shaders off:
-     Quick Menu > Shaders > Video Shaders off.
+     Quick Menu > Shaders > Load, then Save > Save Global Preset. CRT off (or on
+     again): Settings > Video > Video Shaders, at the top.
    - Refresh rate: Settings > Video > Output > Screen Resolution lists the
      screen's modes (60, 90, 120 Hz...) and switches to the one chosen.
    - Controllers: the built-in controls and any Bluetooth or USB controller
