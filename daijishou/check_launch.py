@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 platforms, aapt, apks = sys.argv[1], sys.argv[2], sys.argv[3:]
-yours = {"com.explusalpha.SaturnEmu", "com.jagex.oldscape.android"}
+yours = {"com.explusalpha.SaturnEmu", "com.jagex.oldscape.android", "com.fishstix.dosbox"}
 
 activities = {}
 for apk in apks:
