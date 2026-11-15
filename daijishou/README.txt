@@ -36,12 +36,13 @@ Daijishou with every emulator and port wired to the RG477M builds. No root neede
    - Internal storage/RetroArch/retroarch.cfg is the one config: the cards and
      the app's own icon use it. Copying it again logs RetroAchievements out:
      Settings > Achievements, sign in once (only a token is kept).
-   - CRT look on every core: CRT Easymode (config/global.slangp for Vulkan,
-     global.glslp for GL cores like Mupen64Plus-Next). For CRT Royale (much
-     heavier) or CRT Lottes Fast, point the two files at
-     ../shaders/shaders_slang/crt/crt-royale.slangp (and the glsl one), or
-     Quick Menu > Shaders > Load, then Save > Save Global Preset. CRT off (or on
-     again): Settings > Video > Video Shaders, at the top.
+   - CRT look on every core: CRT Royale on Vulkan cores (config/global.slangp),
+     CRT Easymode on GL cores like Mupen64Plus-Next (global.glslp). Royale is
+     the heaviest CRT shader: if a game slows down, point global.slangp at
+     ../shaders/shaders_slang/crt/crt-easymode.slangp. CRT off (or on again):
+     Settings > Video > Video Shaders, at the top.
+   - The app puts this RetroArch folder (config, shaders, controller profiles)
+     in place by itself, never replacing a file already there.
    - Refresh rate: Settings > Video > Output > Screen Resolution lists the
      screen's modes (60, 90, 120 Hz...) and switches to the one chosen.
    - Controllers: the built-in controls and any Bluetooth or USB controller
