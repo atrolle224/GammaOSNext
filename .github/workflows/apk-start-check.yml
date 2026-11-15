@@ -13,8 +13,9 @@ on:
         description: Its package
         default: org.dolphinemu.mmjr.rg477m
 
+# the setup is a draft release, which only a token that can write sees
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   start:
