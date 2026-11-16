@@ -6,6 +6,7 @@ on:
     paths:
       - 'ports/common/**'
       - '.github/workflows/ports-perfect-dark.yml'
+      - 'ports/perfect-dark/**'
 
 permissions:
   contents: read
@@ -28,7 +29,9 @@ jobs:
           java-version: '17'
 
       - name: 477M packaging
-        run: python3 ports/common/rg477m_android.py game/android/app/build.gradle game/android/app/src/main/res/values/strings.xml com.perfectdark.port.rg477m "Perfect Dark 477M"
+        run: |
+          python3 ports/perfect-dark/all_pads_p1.py game/port/src/input.c
+          python3 ports/common/rg477m_android.py game/android/app/build.gradle game/android/app/src/main/res/values/strings.xml com.perfectdark.port.rg477m "Perfect Dark 477M"
 
       - name: Build
         run: |
