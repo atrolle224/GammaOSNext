@@ -1,0 +1,72 @@
+name: Dolphin pad check
+
+# Starts a Dolphin build from the newest RG477M Daijishou setup in an emulator with a virtual
+# Xbox-style gamepad (tools/vpad) and a game start the way Daijishou asks for one, then prints
+# the controller mappings the app saved and its log: whether port 1 and Wii Remote 1 were
+# put on the gamepad without a device.
+
+on:
+  workflow_dispatch:
+    inputs:
+      apk:
+        description: APK name in the setup's APKs folder
+        default: PrimeHack-477M.apk
+      package:
+        description: Its package
+        default: org.dolphinemu.primehack.rg477m
+
+# the setup is a draft release, which only a token that can write sees
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The APK and the pad
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rid=$(gh api "repos/${{ github.repository }}/releases?per_page=10" -q '[.[]|select(.name|startswith("RG477M Daijishou"))][0].id')
+          aid=$(gh api "repos/${{ github.repository }}/releases/$rid/assets" -q '.[0].id')
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/octet-stream" -o setup.zip \
+            "https://api.github.com/repos/${{ github.repository }}/releases/assets/$aid"
+          unzip -j -q setup.zip "RG477M Daijishou setup/APKs/${{ inputs.apk }}" -d .
+          rm setup.zip
+          gcc -static -O2 -o vpad tools/vpad/vpad.c
+          ls -l *.apk vpad
+
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            adb root; sleep 3
+            adb install -r -g "${{ inputs.apk }}"
+            adb push vpad /data/local/tmp/vpad
+            adb shell chmod 755 /data/local/tmp/vpad
+            adb shell "nohup /data/local/tmp/vpad </dev/null >/dev/null 2>&1 &"
+            sleep 3
+            echo "=== input devices"; adb shell dumpsys input | grep -iE "^ +[0-9]+: |Sources|ControllerNumber" | head -40
+            adb shell "echo fake > /sdcard/fake.iso"
+            adb logcat -c
+            adb shell am start -n ${{ inputs.package }}/org.dolphinemu.dolphinemu.ui.main.MainActivity -a android.intent.action.MAIN -e AutoStartFile /sdcard/fake.iso
+            sleep 40
+            echo "=== running?"; adb shell pidof ${{ inputs.package }} || echo "not running"
+            d=/sdcard/Android/data/${{ inputs.package }}/files
+            for f in GCPadNew.ini WiimoteNew.ini Dolphin.ini; do echo "=== $f"; adb shell cat $d/Config/$f | grep -vE "^\s*$" | head -80; done
+            echo "=== prefs"; adb shell cat /data/data/${{ inputs.package }}/shared_prefs/${{ inputs.package }}_preferences.xml | grep -i rg477m
+            echo "=== Dolphin log"; adb shell "grep -iE 'Rg477m|Added device|CONTROLLERINTERFACE' $d/Logs/dolphin.log" | tail -40
+            echo "=== app log"; adb logcat -d | grep -iE "Rg477m|AndroidRuntime|FATAL|ControllerInterface|Added device" | tail -60
