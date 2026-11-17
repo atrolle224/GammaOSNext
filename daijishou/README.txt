@@ -145,7 +145,7 @@ OLD SCHOOL RUNESCAPE WITH THE CONTROLLER (no root needed)
    3. Start Old School RuneScape from the Ports. Start shows the controls.
 
 PLAYSTATION
-   PlayStation starts RetroArch 477M with SwanStation, the open-source branch of
+   PlayStation starts RetroArch with SwanStation, the open-source branch of
    DuckStation's emulator, already set up for the RG477M: 4x resolution (sharp at
    1280x960), PGXP geometry and texture correction, true colour, fast boot, the
    controller profile and RetroAchievements. Its options are in

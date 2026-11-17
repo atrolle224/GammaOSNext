@@ -54,7 +54,7 @@ CONTROLS IN PEGASUS
    Recently Played and Favorites appear first on the carousel once they have games.
 
 WHICH APP RUNS WHAT
-   RetroArch 477M (com.retroarch.rg477m), cores:
+   RetroArch (com.retroarch.rg477m), cores:
      Game Boy, Game Boy Color: gambatte     Game Boy Advance: mgba
      NES: fceumm                            SNES: snes9x
      Master System, Genesis, Game Gear, Sega CD: genesis_plus_gx

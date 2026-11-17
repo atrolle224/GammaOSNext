@@ -1,6 +1,6 @@
 # APKs in the setup: <repo> <branch> <artifact name> <APK name in the setup>
 # The newest unexpired artifact of that name from that branch is used.
-RetroArch rg477m retroarch-477m-arm64 RetroArch-477M.apk
+RetroArch rg477m retroarch-477m-arm64 RetroArch.apk
 ARMSX2 standard-defaults armsx2-android-arm64 ARMSX2-Net.apk
 ARMSX2 master armsx2-android-arm64 ARMSX2-DNS.apk
 hakuX master hakuX-android-arm64 hakuX.apk

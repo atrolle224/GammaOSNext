@@ -74,7 +74,7 @@ jobs:
           {
             echo "collection: Android"; echo "shortname: Android"; echo "extensions: app"
             echo "ignore-regex: ^(?!.*/android/)"; echo
-            for a in "RetroArch 477M:#e0453a" "Dolphin 477M:#3a6ee0" "ARMSX2 Net:#2f62c9" "hakuX:#2e8b2e" \
+            for a in "RetroArch:#e0453a" "Dolphin 477M:#3a6ee0" "ARMSX2 Net:#2f62c9" "hakuX:#2e8b2e" \
                      "PPSSPP 477M:#4a8fd4" "Flycast 477M:#e07a2e" "melonDS 477M:#8f8f9a" "Fallout CE:#c9a227" \
                      "Perfect Dark:#b8282e" "MobileUO 477M:#7a5230" "Chrome:#4285f4" "Settings:#5f6368"; do
               n=${a%%:*}; c=${a#*:}

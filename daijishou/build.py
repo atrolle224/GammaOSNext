@@ -23,7 +23,7 @@ RA_CFG = "/storage/emulated/0/RetroArch/retroarch.cfg"
 
 
 def retroarch(short, core, label, regex=None):
-    """RetroArch 477M with <core>, from the official RetroArch (aarch64) player for it (or <regex>
+    """RetroArch with <core>, from the official RetroArch (aarch64) player for it (or <regex>
     when Daijishou has none)."""
     return ("ra", short, core, label, regex)
 
@@ -157,8 +157,8 @@ def ra_player(official, short, core, label, regex=None):
         sys.exit(f"{short}: no official player {short}.ra64.{core} to start from")
     args = (f"-n {RA}/com.retroarch.browser.retroactivity.RetroActivityFuture\n -e ROM {{file.path}}\n"
             f" -e LIBRETRO /data/data/{RA}/cores/{core}_libretro_android.so\n -e CONFIGFILE {RA_CFG}")
-    return player(f"{short}.rg477m.ra.{core}", f"{short} - RetroArch 477M ({label})",
-                  f"RetroArch 477M with {label}: RetroAchievements on, controllers set up for the RG477M.",
+    return player(f"{short}.rg477m.ra.{core}", f"{short} - RetroArch ({label})",
+                  f"RetroArch with {label}: RetroAchievements on, controllers set up for the RG477M.",
                   args, base["acceptedFilenameRegex"])
 
 
