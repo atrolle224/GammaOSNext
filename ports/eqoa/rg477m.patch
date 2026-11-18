@@ -186,8 +186,34 @@ index 1a7f1d3..8f41490 100644
                  ("World", vec!["Fog", "Mipmaps", "Flora", "Environment", "Ground Fog", "Art"]),
                  ("Lighting", vec!["Dynamic Lighting", "Sun Shadows", "Light Shadows", "Shadow Distance", "Ambient Occlusion", "Particles"]),
                  ("Characters", vec!["Level of Detail", "NPC/PC Display", "NPC/PC Distance", "Shadows"]),
+diff --git a/crates/eqoa/src/patcher/native.rs b/crates/eqoa/src/patcher/native.rs
+index 57d4420..deb7b56 100644
+--- a/crates/eqoa/src/patcher/native.rs
++++ b/crates/eqoa/src/patcher/native.rs
+@@ -15,7 +15,7 @@ pub struct Tcp;
+ impl super::Wire for Tcp {
+     fn exchange(&mut self, host: &str, port: u16, request: &[u8], piece: &mut dyn FnMut(&[u8]) -> bool) -> Result<(), Error> {
+         use std::net::ToSocketAddrs;
+-        let addr = (host, port).to_socket_addrs().ok().and_then(net::addr::pick).ok_or_else(|| Error::new(3, format!("Cannot resolve server {host}")))?;
++        let addr = (net::addr::internal(host), port).to_socket_addrs().ok().and_then(net::addr::pick).ok_or_else(|| Error::new(3, format!("Cannot resolve server {host}")))?;
+         let mut s = std::net::TcpStream::connect_timeout(&addr, Duration::from_secs(10)).map_err(|_| Error::new(5, format!("Could not connect to {host}")))?;
+         // sceInetSend: the PS2 does not look at the result
+         let _ = s.write_all(request);
+diff --git a/crates/eqoa/src/pregame/link.rs b/crates/eqoa/src/pregame/link.rs
+index f20bd4d..0d93dce 100644
+--- a/crates/eqoa/src/pregame/link.rs
++++ b/crates/eqoa/src/pregame/link.rs
+@@ -262,7 +262,7 @@ mod native {
+             let (tx_in, from) = mpsc::channel::<Got>();
+             let host = host.to_string();
+             std::thread::spawn(move || {
+-                let addr = std::net::ToSocketAddrs::to_socket_addrs(&(host.as_str(), port)).ok().and_then(net::addr::pick);
++                let addr = std::net::ToSocketAddrs::to_socket_addrs(&(net::addr::internal(&host), port)).ok().and_then(net::addr::pick);
+                 let Some(addr) = addr else {
+                     let _ = tx_in.send(Got::Failed(format!("{host}: no address")));
+                     return;
 diff --git a/crates/eqoa/src/pregame/setup/netsetup.rs b/crates/eqoa/src/pregame/setup/netsetup.rs
-index 338557c..8fbcd58 100644
+index 338557c..7b3f684 100644
 --- a/crates/eqoa/src/pregame/setup/netsetup.rs
 +++ b/crates/eqoa/src/pregame/setup/netsetup.rs
 @@ -28,6 +28,13 @@ const HINT: &str = "A host name or an IPv4 address";
@@ -195,9 +221,9 @@ index 338557c..8fbcd58 100644
  const NONE: &str = "(none)";
  
 +/// RG477M: the servers to pick from (Left/Right on the Preset row). EQOAEmu's is
-+/// the patch server its PCSX2 guide points patch.everquestonlineadventures.com at.
++/// the patch name, which `net::addr::internal` sends to its server as its guide does.
 +const PRESET: &str = "Preset";
-+const PRESETS: [(&str, Option<&str>); 3] = [("eqoaclassic.com", Some("eqoaclassic.com")), ("Sandstorm", Some("eqoa.live")), ("EQOAEmu", Some("54.189.250.11"))];
++const PRESETS: [(&str, Option<&str>); 3] = [("eqoaclassic.com", Some("eqoaclassic.com")), ("Sandstorm", Some("eqoa.live")), ("EQOAEmu", Some("patch.everquestonlineadventures.com"))];
 +const CUSTOM: &str = "Custom";
 +const EMU_TITLE: &str = "EQOAEmu server";
 +
@@ -515,6 +541,30 @@ index 29c74b3..ebafbd0 100644
                  let f = g.renderer.scale.targets(&g.device, &target, &g.depth, (g.config.width, g.config.height));
                  // the ground fog a PS2 frame keeps reads the frame: a target
                  // that cannot be copied (a page's canvas) draws the scene in
+diff --git a/crates/net/src/addr.rs b/crates/net/src/addr.rs
+index 4cf0db4..20aafa8 100644
+--- a/crates/net/src/addr.rs
++++ b/crates/net/src/addr.rs
+@@ -24,9 +24,18 @@ pub fn pick(addrs: impl IntoIterator<Item = SocketAddr>) -> Option<SocketAddr> {
+     first
+ }
+ 
++/// RG477M: names answered before the system's resolver, as PCSX2's Internal
++/// DNS answers them (EQOAEmu's guide points the patch name at its server).
++pub fn internal(host: &str) -> &str {
++    if host.eq_ignore_ascii_case("patch.everquestonlineadventures.com") {
++        return "54.189.250.11";
++    }
++    host
++}
++
+ /// `host:port` resolved, by `pick`.
+ pub fn resolve(host: &str, port: u16) -> std::io::Result<SocketAddr> {
+-    pick((host, port).to_socket_addrs()?).ok_or_else(|| std::io::Error::other("no address"))
++    pick((internal(host), port).to_socket_addrs()?).ok_or_else(|| std::io::Error::other("no address"))
+ }
+ 
+ /// How a session reaches IPv4 addresses from an IPv6 address alone: the
 diff --git a/crates/render/src/scale.rs b/crates/render/src/scale.rs
 index 51a1e83..8c8f4d5 100644
 --- a/crates/render/src/scale.rs
