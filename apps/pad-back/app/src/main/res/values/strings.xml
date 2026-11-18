@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pad Back 477M</string>
+    <string name="service_description">Turns the controller buttons you chose in Pad Back 477M into Android\'s Back and Home. It acts only on those buttons.</string>
+</resources>
