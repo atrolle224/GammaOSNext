@@ -2,19 +2,24 @@ package com.rg477m.padback;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.accessibility.AccessibilityWindowInfo;
 
 import java.util.HashSet;
 import java.util.Set;
 
-// The chosen buttons on their controllers become Android's Back and Home. A single button is
+// The chosen buttons on their controllers become Android's Back, Home, the power menu, and
+// recent apps with "Clear all" tapped. A single button is
 // taken from the app in front; a pair of buttons acts when they are held together and let go,
 // and each still reaches the app on its own.
 public class BackService extends AccessibilityService {
     static final String PREFS = "padback";
-    static final String[] ROLES = {"back", "home"};
+    static final String[] ROLES = {"back", "home", "power", "clear"};
 
     private final Set<Integer> down = new HashSet<>();
 
@@ -64,7 +69,50 @@ public class BackService extends AccessibilityService {
 
     private void act(String role) {
         down.clear();
-        performGlobalAction(role.equals("home") ? GLOBAL_ACTION_HOME : GLOBAL_ACTION_BACK);
+        switch (role) {
+            case "home":
+                performGlobalAction(GLOBAL_ACTION_HOME);
+                break;
+            case "power":
+                performGlobalAction(GLOBAL_ACTION_POWER_DIALOG);
+                break;
+            case "clear":
+                performGlobalAction(GLOBAL_ACTION_RECENTS);
+                tryClear(6);
+                break;
+            default:
+                performGlobalAction(GLOBAL_ACTION_BACK);
+        }
+    }
+
+    // The recents screen takes a moment to draw: look for its clear button a few times.
+    private void tryClear(int tries) {
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (!clickClearAll() && tries > 1) {
+                tryClear(tries - 1);
+            }
+        }, 400);
+    }
+
+    private boolean clickClearAll() {
+        for (AccessibilityWindowInfo w : getWindows()) {
+            AccessibilityNodeInfo root = w.getRoot();
+            if (root == null) {
+                continue;
+            }
+            for (String label : new String[] {"Clear all", "Close all", "Clear All", "CLEAR ALL"}) {
+                for (AccessibilityNodeInfo n : root.findAccessibilityNodeInfosByText(label)) {
+                    AccessibilityNodeInfo c = n;
+                    while (c != null && !c.isClickable()) {
+                        c = c.getParent();
+                    }
+                    if (c != null && c.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override

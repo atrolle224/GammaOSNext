@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
         box.addView(access);
 
         Button clear = new Button(this);
-        clear.setText("Clear both");
+        clear.setText("Forget all buttons");
         clear.setOnClickListener(v -> {
             prefs().edit().clear().apply();
             learning = null;
@@ -67,7 +67,16 @@ public class MainActivity extends Activity {
     }
 
     private static String name(String role) {
-        return role.equals("home") ? "Home" : "Back";
+        switch (role) {
+            case "home":
+                return "Home";
+            case "power":
+                return "Power menu";
+            case "clear":
+                return "Close all apps";
+            default:
+                return "Back";
+        }
     }
 
     private SharedPreferences prefs() {
