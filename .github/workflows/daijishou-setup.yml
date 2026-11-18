@@ -57,7 +57,7 @@ jobs:
           grep -v '^#' pegasus/apks.list | while read -r repo branch art apk; do
             [ -n "$repo" ] || continue
             id=$(gh api "repos/atrolle224/$repo/actions/artifacts?name=$art&per_page=50" --jq \
-              "[.artifacts[] | select(.expired == false and .workflow_run.head_branch == \"$branch\")][0].id // empty")
+              "[.artifacts[] | select(.expired == false and .workflow_run.head_branch == \"$branch\")] | sort_by(.created_at) | last | .id // empty")
             if [ -z "$id" ]; then echo "::warning::$repo $branch: no $art"; continue; fi
             rm -rf dl && mkdir dl
             gh api "repos/atrolle224/$repo/actions/artifacts/$id/zip" > dl/a.zip
