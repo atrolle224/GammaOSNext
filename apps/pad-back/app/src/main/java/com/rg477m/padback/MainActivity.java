@@ -12,10 +12,14 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.util.Set;
+import java.util.TreeSet;
+
 // Learns the buttons that should act as Back and Home: press "Choose", then the button.
 public class MainActivity extends Activity {
     private TextView status;
     private String learning;
+    private final Set<Integer> held = new TreeSet<>();
 
     @Override
     protected void onCreate(Bundle state) {
@@ -36,8 +40,10 @@ public class MainActivity extends Activity {
             choose.setText("Choose the " + name(role) + " button");
             choose.setOnClickListener(v -> {
                 learning = role;
+                held.clear();
                 status.setText("Press the button on your controller that should work as "
-                        + name(role) + ".\n(If nothing happens, that button sends nothing Android can see.)");
+                        + name(role) + ", or hold two buttons together and let go.\n"
+                        + "(If nothing happens, that button sends nothing Android can see.)");
             });
             box.addView(choose);
         }
@@ -72,12 +78,17 @@ public class MainActivity extends Activity {
         SharedPreferences p = prefs();
         StringBuilder s = new StringBuilder();
         for (String role : BackService.ROLES) {
-            int key = p.getInt(role + "_key", KeyEvent.KEYCODE_UNKNOWN);
+            Set<Integer> keys = BackService.keys(p, role);
             s.append(name(role)).append(": ");
-            if (key == KeyEvent.KEYCODE_UNKNOWN) {
+            if (keys.isEmpty()) {
                 s.append("not chosen\n");
             } else {
-                s.append(KeyEvent.keyCodeToString(key)).append(" on ")
+                StringBuilder k = new StringBuilder();
+                for (int code : keys) {
+                    k.append(k.length() > 0 ? " + " : "")
+                            .append(KeyEvent.keyCodeToString(code).replace("KEYCODE_", ""));
+                }
+                s.append(k).append(" on ")
                         .append(p.getString(role + "_device", "any controller")).append('\n');
             }
         }
@@ -95,13 +106,21 @@ public class MainActivity extends Activity {
         if (code == KeyEvent.KEYCODE_BACK && !pad) {
             return super.dispatchKeyEvent(e);
         }
-        if (e.getAction() == KeyEvent.ACTION_UP) {
+        if (e.getAction() == KeyEvent.ACTION_DOWN) {
+            held.add(code);
+        } else if (e.getAction() == KeyEvent.ACTION_UP && !held.isEmpty()) {
+            held.add(code);
+            StringBuilder keys = new StringBuilder();
+            for (int k : held) {
+                keys.append(keys.length() > 0 ? "," : "").append(k);
+            }
             InputDevice d = e.getDevice();
             prefs().edit()
-                    .putInt(learning + "_key", code)
+                    .putString(learning + "_keys", keys.toString())
                     .putString(learning + "_device", d != null ? d.getName() : "")
                     .apply();
             learning = null;
+            held.clear();
             show();
         }
         return true;
