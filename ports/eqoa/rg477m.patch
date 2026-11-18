@@ -194,12 +194,12 @@ index 338557c..8fbcd58 100644
  const BAD: &str = "That is not a server address. Enter a host name (eqoa.example.com) or an IPv4 address (192.0.2.10), or leave it blank for none.";
  const NONE: &str = "(none)";
  
-+/// RG477M: the servers to pick from (Left/Right on the Preset row); the EMU
-+/// beta's address is typed once and kept (`settings::emu_beta`).
++/// RG477M: the servers to pick from (Left/Right on the Preset row). EQOAEmu's is
++/// the patch server its PCSX2 guide points patch.everquestonlineadventures.com at.
 +const PRESET: &str = "Preset";
-+const PRESETS: [(&str, Option<&str>); 3] = [("eqoaclassic.com", Some("eqoaclassic.com")), ("Sandstorm", Some("eqoa.live")), ("EMU beta", None)];
++const PRESETS: [(&str, Option<&str>); 3] = [("eqoaclassic.com", Some("eqoaclassic.com")), ("Sandstorm", Some("eqoa.live")), ("EQOAEmu", Some("54.189.250.11"))];
 +const CUSTOM: &str = "Custom";
-+const EMU_TITLE: &str = "EMU beta server";
++const EMU_TITLE: &str = "EQOAEmu server";
 +
  /// The longest address the edit box takes (the terminator counts).
  const MAX_LEN: usize = 64;
