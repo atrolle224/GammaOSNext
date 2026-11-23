@@ -40,7 +40,11 @@ $PcConfig = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "My Games\Op
 
 function Step($text) { Write-Host ""; Write-Host "== $text" -ForegroundColor Cyan }
 function Ask($text) { (Read-Host "$text [Y/n]") -notmatch '^[nN]' }
-function Fail($text) { Write-Host $text -ForegroundColor Red; exit 1 }
+function Fail($text) {
+    Write-Host $text -ForegroundColor Red
+    if ($Log) { Write-Host "The log is $Log"; try { Stop-Transcript | Out-Null } catch { } }
+    exit 1
+}
 
 # ---------------------------------------------------------------------------- checks
 
@@ -50,6 +54,17 @@ foreach ($esm in "Morrowind.esm", "Tribunal.esm", "Bloodmoon.esm") {
     if (-not (Test-Path (Join-Path $dataFiles $esm))) { Fail "$esm is missing in $dataFiles. Install Morrowind GOTY from Steam first." }
 }
 New-Item -ItemType Directory -Force $Work, $Out, $Mods, $Momw, $Cache, $Tools | Out-Null
+
+# everything this script prints, errors included, also goes to a log to send for help
+$Log = Join-Path $Work "RG477M-Morrowind-log.txt"
+Start-Transcript -Path $Log -Force | Out-Null
+trap {
+    Write-Host "ERROR: $_" -ForegroundColor Red
+    Write-Host $_.InvocationInfo.PositionMessage
+    Write-Host "The log is $Log"
+    Stop-Transcript | Out-Null
+    break
+}
 $drive = (Get-Item $Work).PSDrive
 $freeGb = [math]::Round($drive.Free / 1GB)
 Write-Host "Free on ${drive}: $freeGb GB. The list and its download cache need about 60 GB;"
@@ -1376,3 +1391,5 @@ foreach ($need in @("Morrowind.ini", "Data Files\Morrowind.esm", "momw\openmw.cf
     if (-not (Test-Path -LiteralPath (Join-Path $Out $need))) { Write-Host "  missing: $need" -ForegroundColor Red }
 }
 Write-Host "The download cache $Cache can be deleted now."
+Write-Host "Log of this run: $Log"
+Stop-Transcript | Out-Null
