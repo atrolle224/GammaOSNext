@@ -987,7 +987,7 @@ function Set-Settings([string]$file, [hashtable]$want) {
         if ($t -match '^\[(.+)\]$') { & $flush; $section = $Matches[1]; $out.Add($line); continue }
         if ($want.ContainsKey($section) -and $t -match '^([^=]+?)\s*=') {
             $k = $Matches[1]
-            if ($want[$section].ContainsKey($k)) { $out.Add("$k = $($want[$section][$k])"); $done["$section/$k"] = $true; continue }
+            if ($want[$section].Contains($k)) { $out.Add("$k = $($want[$section][$k])"); $done["$section/$k"] = $true; continue }
         }
         $out.Add($line)
     }
