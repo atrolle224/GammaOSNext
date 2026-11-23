@@ -46,6 +46,14 @@ jobs:
           python3 daijishou/wallpapers.py dj/themes/platform_wallpapers_packs/EpicArtBookNoir \
             "$out/Daijishou wallpapers/EpicArtBookNoir" "$out/Daijishou platforms"
           cp daijishou/README.txt "$out/"
+          # the Morrowind scripts must at least parse
+          pwsh -NoProfile -Command '
+            $bad = 0
+            foreach ($f in "ports/openmw/RG477M-Morrowind.ps1", "ports/openmw/RG477M-Morrowind-LowRes.ps1") {
+              $e = $null; $null = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$e)
+              foreach ($x in $e) { Write-Host "::error file=$f,line=$($x.Extent.StartLineNumber)::$($x.Message)"; $bad++ }
+            }
+            exit $bad'
           cp ports/openmw/RG477M-Morrowind.ps1 ports/openmw/RG477M-Morrowind-LowRes.ps1 "$out/"
 
       - name: The 477M builds

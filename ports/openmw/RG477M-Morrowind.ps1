@@ -179,7 +179,22 @@ $extraMods = @(
     @{ Name = "62 Roberts Bodies Color Tweaks for Vanilla Heads"; Mod = 48299; File = 1000022566 },
     @{ Name = "63 New Beast Bodies Clean"; Mod = 47678; File = 1000017456; Pick = @('data=?') },
     @{ Name = "64 New Beast Bodies Clean Pluginless"; Mod = 43795; File = 1000039580 },
-    @{ Name = "65 Familiar Faces TD Khajiits"; Mod = 43795; File = 1000056930 }
+    @{ Name = "65 Familiar Faces TD Khajiits"; Mod = 43795; File = 1000056930 },
+    @{ Name = "66 Better Bodies for Tamriel Data"; Mod = 56715; File = "main" },
+    # Voices of Vvardenfell: Kezyma's voice files (all its main files, with the Patch for Purists
+    # lines over them), played through the Lua helper and the OpenMW patch; the voice packs of
+    # the lands and quests this build has
+    @{ Name = "70 OpenMW Lua helper utility"; Mod = 54629; File = "main" },
+    @{ Name = "71 Voices of Vvardenfell"; Mod = 52279; File = "all"; Also = "*Patch for Purists*" },
+    @{ Name = "72 OpenMW Voices of Vvardenfell patch"; Mod = 54137; File = "main" },
+    @{ Name = "73 Tamriel Rebuilt Grasping Fortune Fully Voiced"; Mod = 56488; File = "main" },
+    @{ Name = "74 Skyrim Home of the Nords Fully Voiced"; Mod = 57346; File = "main" },
+    @{ Name = "75 Ebonheart Underworks Voiced"; Mod = 57227; File = "main"; Match = "(?i)dialogue.*greet|greet.*dialogue" },
+    @{ Name = "76 Diverse Voices"; Mod = 57971; File = "main"; Match = "(?i)openmw|1\.1" },
+    # animation and robes
+    @{ Name = "80 Hit Reactions Animated"; Mod = 56594; File = "main" },
+    @{ Name = "81 Necromancer Robes Integration"; Mod = 61019; File = "main" },
+    @{ Name = "82 Animated Heart of Lorkhan"; Mod = 60976; File = "main" }
 )
 function Get-NexusKey {
     $files = @($env:LOCALAPPDATA, $env:APPDATA) | ForEach-Object { Join-Path $_ "umomwd" } |
@@ -255,18 +270,39 @@ if ($List -eq "expanded-vanilla") {
         $target = Join-Path (Join-Path $Work "Extra") $extraMod.Name
         if (Test-Path $target) { Write-Host "  $($extraMod.Name): already in Extra" }
         else { try {
-            $api = "https://api.nexusmods.com/v1/games/morrowind/mods/$($extraMod.Mod)/files/$($extraMod.File)"
-            $info = Invoke-RestMethod "$api.json" -Headers $headers
-            $archive = Join-Path $archives $info.file_name
-            if (-not (Test-Path $archive)) {
-                $links = Invoke-RestMethod "$api/download_link.json" -Headers $headers
-                Invoke-WebRequest $links[0].URI -OutFile $archive
+            $modApi = "https://api.nexusmods.com/v1/games/morrowind/mods/$($extraMod.Mod)/files"
+            # a file id, or "main" (the newest main file, or the newest whose name matches Match),
+            # or "all" (every main file, unpacked together)
+            $ids = @($extraMod.File)
+            if ($extraMod.File -is [string]) {
+                $mains = @((Invoke-RestMethod "$modApi.json" -Headers $headers).files |
+                    Where-Object { $_.category_name -eq "MAIN" } | Sort-Object uploaded_timestamp)
+                if ($extraMod.Match) { $mains = @($mains | Where-Object { $_.name -match $extraMod.Match -or $_.file_name -match $extraMod.Match }) }
+                if ($mains.Count -eq 0) { throw "no main file on Nexus" }
+                $ids = if ($extraMod.File -eq "all") { @($mains.file_id) } else { @($mains[-1].file_id) }
             }
             New-Item -ItemType Directory -Force $target | Out-Null
-            & $sevenZip x $archive "-o$target" -y | Out-Null
-            if ($LASTEXITCODE -ne 0) {
-                if ($archive -notlike "*.zip") { throw "could not unpack $($info.file_name)" }
-                Expand-Archive $archive $target -Force
+            foreach ($id in $ids) {
+                $api = "$modApi/$id"
+                $info = Invoke-RestMethod "$api.json" -Headers $headers
+                $archive = Join-Path $archives $info.file_name
+                if (-not (Test-Path $archive)) {
+                    $links = Invoke-RestMethod "$api/download_link.json" -Headers $headers
+                    Invoke-WebRequest $links[0].URI -OutFile $archive
+                }
+                & $sevenZip x $archive "-o$target" -y | Out-Null
+                if ($LASTEXITCODE -ne 0) {
+                    if ($archive -notlike "*.zip") { throw "could not unpack $($info.file_name)" }
+                    Expand-Archive $archive $target -Force
+                }
+            }
+            if ($extraMod.Also) {
+                # the mod's files, then the optional folder that replaces some of them
+                $also = Get-ChildItem -LiteralPath $target -Directory -Recurse -Filter $extraMod.Also | Select-Object -First 1
+                if ($also) {
+                    $extraMod.Pick = @('data=?', 'data=' + $also.FullName.Substring($target.Length + 1))
+                    Write-Host "  + $($also.Name)"
+                }
             }
             Write-Host "  $($extraMod.Name)"
         } catch {
@@ -705,6 +741,27 @@ removeContent = [
   '''StatsWindow.ESP''',
   '''StatsWindow.omwscripts''',
   '''Little Landscapes - Seyda Neen Swamp Pools.ESP''',
+  # they rewrite vanilla dialogue, which Voices of Vvardenfell's lines are matched to
+  '''Djangos Dialogue.ESP''',
+  '''Djangos Dialogue - Patch for Purists.esp''',
+  '''LDM - Context Matters 1.7.ESP''',
+  '''Greetings for No Lore.esp''',
+  '''PR Voice Overhaul.esp''',
+  '''Finished Morrowind - CORE PATCH - Part 4 - More Audio Dialogue for Service NPCs.ESP''',
+  '''Cutting Room Floor - Voice Lines.esp''',
+  '''RepopulatedCreatures_DialogueEdits.ESP''',
+  # heavy on the RG477M's GPU and CPU
+  '''distant_seafloor_2.00.esm''',
+  '''distant seafloor TOTSP 2.3.0 edges fix.esp''',
+  '''Natural Wildlife.omwscripts''',
+  '''RepopulatedCreatures - More Daedra.omwaddon''',
+  '''Lumenaire.omwaddon''',
+  '''BCoM - Atmospheric_Arena.ESP''',
+  '''BCoM_Atmospheric_Plazas.ESP''',
+  '''BCOM_OpenMW_plazas.ESP''',
+  '''Interior exterior flag reset_Atmospheric Arena.ESP''',
+  '''Interior exterior flag reset_Atmospheric Plazas.ESP''',
+  '''BCOM_Cluttered_Canal.ESP''',
 ]
 '@
 
@@ -894,6 +951,44 @@ if ($counts.data -eq 0 -or $lines[0] -notmatch '/Data Files"$') {
 }
 [IO.File]::WriteAllLines((Join-Path $Momw "openmw.cfg"), $lines)
 Copy-Item (Join-Path $PcConfig "settings.cfg") $Momw -Force -ErrorAction SilentlyContinue
+
+# settings for the RG477M's Mali GPU (shadows on actors only, thinner and nearer grass), and
+# the one Voices of Vvardenfell's OpenMW patch needs
+function Set-Settings([string]$file, [hashtable]$want) {
+    if (-not (Test-Path $file)) { return }
+    $out = New-Object System.Collections.Generic.List[string]
+    $section = ""
+    $done = @{}
+    $flush = {
+        if ($want.ContainsKey($section)) {
+            foreach ($k in $want[$section].Keys) { if (-not $done["$section/$k"]) { $out.Add("$k = $($want[$section][$k])"); $done["$section/$k"] = $true } }
+        }
+    }
+    foreach ($line in Get-Content $file) {
+        $t = $line.Trim()
+        if ($t -match '^\[(.+)\]$') { & $flush; $section = $Matches[1]; $out.Add($line); continue }
+        if ($want.ContainsKey($section) -and $t -match '^([^=]+?)\s*=') {
+            $k = $Matches[1]
+            if ($want[$section].ContainsKey($k)) { $out.Add("$k = $($want[$section][$k])"); $done["$section/$k"] = $true; continue }
+        }
+        $out.Add($line)
+    }
+    & $flush
+    foreach ($sec in $want.Keys) {
+        $missing = @($want[$sec].Keys | Where-Object { -not $done["$sec/$_"] })
+        if ($missing.Count -gt 0) {
+            $out.Add(""); $out.Add("[$sec]")
+            foreach ($k in $missing) { $out.Add("$k = $($want[$sec][$k])") }
+        }
+    }
+    [IO.File]::WriteAllLines($file, $out)
+}
+Set-Settings (Join-Path $Momw "settings.cfg") @{
+    "Shadows" = [ordered]@{ "number of shadow maps" = "2"; "shadow map resolution" = "1024";
+        "terrain shadows" = "false"; "object shadows" = "false"; "actor shadows" = "true"; "player shadows" = "true" }
+    "Groundcover" = [ordered]@{ "density" = "0.5"; "rendering distance" = "3072" }
+    "Sound" = [ordered]@{ "camera listener" = "false" }
+}
 $navmesh = Get-ChildItem $PcConfig -Filter "navmesh.db" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($navmesh) { Copy-Item $navmesh.FullName $Momw -Force } else { Write-Host "  no navmesh.db (OpenMW builds it while you play)" }
 [IO.File]::WriteAllText((Join-Path $Momw "list.txt"), "$ListName ($List, modding-openmw.com)")
