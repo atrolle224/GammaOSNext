@@ -306,15 +306,21 @@ if ($List -eq "expanded-vanilla") {
                         (Get-Item -LiteralPath $archive).Length -ne [int64]$info.size_in_bytes) {
                     Remove-Item -LiteralPath $archive -Force
                 }
-                if (-not (Test-Path -LiteralPath $archive)) {
-                    $links = Invoke-RestMethod "$api/download_link.json" -Headers $headers
-                    Invoke-WebRequest $links[0].URI -OutFile "$archive.part"
-                    Move-Item -LiteralPath "$archive.part" -Destination $archive -Force
-                }
-                & $sevenZip x $archive "-o$target" -y | Out-Null
-                if ($LASTEXITCODE -ne 0) {
-                    if ($archive -notlike "*.zip") { throw "could not unpack $($info.file_name)" }
-                    Expand-Archive $archive $target -Force
+                # an archive that won't unpack (cut off by an earlier run) is downloaded again, once
+                foreach ($try in 1, 2) {
+                    if (-not (Test-Path -LiteralPath $archive)) {
+                        $links = Invoke-RestMethod "$api/download_link.json" -Headers $headers
+                        Invoke-WebRequest $links[0].URI -OutFile "$archive.part"
+                        Move-Item -LiteralPath "$archive.part" -Destination $archive -Force
+                    }
+                    & $sevenZip x $archive "-o$target" -y | Out-Null
+                    if ($LASTEXITCODE -eq 0) { break }
+                    if ($archive -like "*.zip") {
+                        try { Expand-Archive $archive $target -Force; break } catch { }
+                    }
+                    Remove-Item -LiteralPath $archive -Force
+                    if ($try -eq 2) { throw "could not unpack $($info.file_name)" }
+                    Write-Host "  $($info.file_name) was incomplete; downloading it again" -ForegroundColor Yellow
                 }
             }
             [IO.File]::WriteAllText($mark, ($ids -join ","))
