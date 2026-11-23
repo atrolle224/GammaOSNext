@@ -180,21 +180,23 @@ $extraMods = @(
     @{ Name = "63 New Beast Bodies Clean"; Mod = 47678; File = 1000017456; Pick = @('data=?') },
     @{ Name = "64 New Beast Bodies Clean Pluginless"; Mod = 43795; File = 1000039580 },
     @{ Name = "65 Familiar Faces TD Khajiits"; Mod = 43795; File = 1000056930 },
-    @{ Name = "66 Better Bodies for Tamriel Data"; Mod = 56715; File = "main" },
-    # Voices of Vvardenfell: Kezyma's voice files (all its main files, with the Patch for Purists
-    # lines over them), played through the Lua helper and the OpenMW patch; the voice packs of
-    # the lands and quests this build has
-    @{ Name = "70 OpenMW Lua helper utility"; Mod = 54629; File = "main" },
-    @{ Name = "71 Voices of Vvardenfell"; Mod = 52279; File = "all"; Also = "*Patch for Purists*" },
-    @{ Name = "72 OpenMW Voices of Vvardenfell patch"; Mod = 54137; File = "main" },
-    @{ Name = "73 Tamriel Rebuilt Grasping Fortune Fully Voiced"; Mod = 56488; File = "main" },
-    @{ Name = "74 Skyrim Home of the Nords Fully Voiced"; Mod = 57346; File = "main" },
-    @{ Name = "75 Ebonheart Underworks Voiced"; Mod = 57227; File = "main"; Match = "(?i)dialogue.*greet|greet.*dialogue" },
-    @{ Name = "76 Diverse Voices"; Mod = 57971; File = "main"; Match = "(?i)openmw|1\.1" },
-    # animation and robes
+    # Voices of Vvardenfell's voice files (Patch for Purists lines over the core ones), played by
+    # the OpenMW patch the voice packs are made for (OpenMW 0.51 needs no Lua helper); VoV's own
+    # OpenMW script is left out so lines don't play twice
+    @{ Name = "71 Voices of Vvardenfell"; Mod = 52279; File = 1000066102; Pick = @('data=00 Core', 'data=01 Patch for Purists') },
+    @{ Name = "72 OpenMW Voices of Vvardenfell patch"; Mod = 54137; File = 1000064551 },
+    @{ Name = "73 Tamriel Rebuilt Grasping Fortune Fully Voiced"; Mod = 56488; File = 1000052458 },
+    @{ Name = "74 Skyrim Home of the Nords Fully Voiced"; Mod = 57346; File = 1000056266 },
+    @{ Name = "75 Ebonheart Underworks Voiced"; Mod = 57227; File = 1000055610 },
+    @{ Name = "76 Diverse Voices"; Mod = 57971; File = 1000061836 },
+    # animation, robes, daedra weapons
+    @{ Name = "79 Max Yari's Script Services"; Mod = 60256; File = "main" },
     @{ Name = "80 Hit Reactions Animated"; Mod = 56594; File = "main" },
-    @{ Name = "81 Necromancer Robes Integration"; Mod = 61019; File = "main" },
-    @{ Name = "82 Animated Heart of Lorkhan"; Mod = 60976; File = "main" }
+    @{ Name = "81 Necromancer Robes"; Mod = 51775; File = "main" },
+    @{ Name = "82 Necromancer Robes Integration"; Mod = 61019; File = "main" },
+    @{ Name = "83 Animated Heart of Lorkhan"; Mod = 60976; File = "main" },
+    @{ Name = "84 Golden Saint Equipment"; Mod = 58440; File = 1000068155 },
+    @{ Name = "85 Dremora Equipment"; Mod = 58440; File = 1000068154 }
 )
 function Get-NexusKey {
     $files = @($env:LOCALAPPDATA, $env:APPDATA) | ForEach-Object { Join-Path $_ "umomwd" } |
@@ -265,9 +267,20 @@ if ($List -eq "expanded-vanilla") {
     $sevenZip = Join-Path $Tools "7zmo.exe"
     $archives = Join-Path $Cache "extra"
     New-Item -ItemType Directory -Force $archives | Out-Null
+    # folders of earlier versions of this list
+    foreach ($old in @("66 Better Bodies for Tamriel Data", "70 OpenMW Lua helper utility",
+            "81 Necromancer Robes Integration", "82 Animated Heart of Lorkhan")) {
+        $stale = Join-Path (Join-Path $Work "Extra") $old
+        if (Test-Path -LiteralPath $stale) { Remove-Item -LiteralPath $stale -Recurse -Force }
+    }
     foreach ($extraMod in $extraMods) {
         if (-not $nexusKey) { break }
         $target = Join-Path (Join-Path $Work "Extra") $extraMod.Name
+        $mark = Join-Path $target "nexus-file.txt"
+        if ($extraMod.File -isnot [string] -and (Test-Path -LiteralPath $target) -and
+                (-not (Test-Path -LiteralPath $mark) -or (Get-Content -LiteralPath $mark) -ne [string]$extraMod.File)) {
+            Remove-Item -LiteralPath $target -Recurse -Force
+        }
         if (Test-Path $target) { Write-Host "  $($extraMod.Name): already in Extra" }
         else { try {
             $modApi = "https://api.nexusmods.com/v1/games/morrowind/mods/$($extraMod.Mod)/files"
@@ -296,14 +309,7 @@ if ($List -eq "expanded-vanilla") {
                     Expand-Archive $archive $target -Force
                 }
             }
-            if ($extraMod.Also) {
-                # the mod's files, then the optional folder that replaces some of them
-                $also = Get-ChildItem -LiteralPath $target -Directory -Recurse -Filter $extraMod.Also | Select-Object -First 1
-                if ($also) {
-                    $extraMod.Pick = @('data=?', 'data=' + $also.FullName.Substring($target.Length + 1))
-                    Write-Host "  + $($also.Name)"
-                }
-            }
+            [IO.File]::WriteAllText($mark, ($ids -join ","))
             Write-Host "  $($extraMod.Name)"
         } catch {
             Remove-Item -LiteralPath $target -Recurse -Force -ErrorAction SilentlyContinue
@@ -1138,10 +1144,12 @@ if (-not $KeepStartingSkills) {
     [IO.File]::WriteAllText((Join-Path $skillsMod "scripts\SkillsStartAtOne\player.lua"), @'
 -- Skills Start At One (RG477M), for OpenMW 0.49 and newer.
 --
--- A new character's skills are all set to one level (1 by default) the moment character
--- creation ends: when you walk out of the Census and Excise Office with your class and
--- birthsign. Characters that were past character creation before the mod was added keep
--- their skills, unless you use "Set this character's skills now" in
+-- The moment character creation ends (walking out of the Census and Excise Office), a new
+-- character of any race, mod-added ones included, loses what its race, class and
+-- specialization gave it: every skill is set to one level (1 by default), every attribute to
+-- another (40 by default, 0 keeps them), and the race's abilities, powers and spells are
+-- taken away (the birthsign's stay). Characters that were past character creation before the
+-- mod was added are left alone, unless you use "Set this character now" in
 -- Options > Scripts > Skills Start At One.
 --
 -- Leveling mods (Natural Character Growth, Skill Evolution) set up their own state when
@@ -1181,6 +1189,21 @@ I.Settings.registerGroup {
             argument = { integer = true, min = 0, max = 100 },
         },
         {
+            key = 'attributes',
+            renderer = 'number',
+            name = 'attributesName',
+            description = 'attributesDescription',
+            default = 40,
+            argument = { integer = true, min = 0, max = 100 },
+        },
+        {
+            key = 'raceSpells',
+            renderer = 'checkbox',
+            name = 'raceSpellsName',
+            description = 'raceSpellsDescription',
+            default = true,
+        },
+        {
             key = 'applyNow',
             renderer = 'checkbox',
             name = 'applyNowName',
@@ -1209,11 +1232,52 @@ local function setSkills()
             stat.progress = 0
         end
     end
+    local value = settings:get('attributes') or 40
+    if value > 0 then
+        for _, attribute in ipairs(core.stats.Attribute.records) do
+            local accessor = types.Actor.stats.attributes[attribute.id]
+            if accessor then
+                local stat = accessor(self)
+                if stat.base ~= value then
+                    stat.base = value
+                end
+            end
+        end
+        -- level 1 health is (Strength + Endurance) / 2
+        local health = types.Actor.stats.dynamic.health(self)
+        if health.base ~= value then
+            health.base = value
+            health.current = value
+        end
+    end
+end
+
+local function removeRaceSpells()
+    if not settings:get('raceSpells') then return end
+    local race = types.NPC.races.record(types.NPC.record(self).race)
+    if not race or not race.spells then return end
+    local keep = {}
+    local signId = types.Player.getBirthSign(self)
+    local sign = signId and signId ~= '' and types.Player.birthSigns.record(signId)
+    if sign then
+        for _, id in ipairs(sign.spells) do keep[id:lower()] = true end
+    end
+    local spells = types.Actor.spells(self)
+    for _, id in ipairs(race.spells) do
+        if not keep[id:lower()] and spells[id] then
+            spells:remove(id)
+        end
+    end
+end
+
+local function apply()
+    setSkills()
+    removeRaceSpells()
 end
 
 local function start(message)
     phase = 'done'
-    local ok, err = pcall(setSkills)
+    local ok, err = pcall(apply)
     if not ok then
         ui.showMessage('Skills Start At One failed: ' .. tostring(err))
         return
@@ -1225,7 +1289,7 @@ end
 settings:subscribe(async:callback(function(_, key)
     if key == 'applyNow' and settings:get('applyNow') then
         settings:set('applyNow', false)
-        start('Every skill set to %d.')
+        start('Skills set to %d, racial bonuses removed.')
     end
 end))
 
@@ -1244,10 +1308,10 @@ return {
             if phase == 'waiting' then
                 local leftOffice = lastCell == CENSUS_OFFICE and cell ~= CENSUS_OFFICE
                 if types.Player.isCharGenFinished(self) or leftOffice then
-                    start('Every skill starts at %d.')
+                    start('Skills start at %d, racial bonuses removed.')
                 end
             elseif core.getRealTime() < holdUntil then
-                pcall(setSkills)
+                pcall(apply)
             end
             lastCell = cell
         end,
@@ -1262,16 +1326,20 @@ return {
 '@)
     New-Item -ItemType Directory -Force (Join-Path $skillsMod "l10n\SkillsStartAtOne") | Out-Null
     [IO.File]::WriteAllText((Join-Path $skillsMod "l10n\SkillsStartAtOne\en.yaml"), @'
-pageDescription: "Every skill of a new character starts at one level once character creation ends (leaving the Census and Excise Office)."
+pageDescription: "When character creation ends (leaving the Census and Excise Office), a new character of any race loses its race, class and specialization bonuses: every skill and every attribute starts at one level, and racial abilities and powers are removed."
 levelName: "Starting skill level"
 levelDescription: "The level every skill is set to. 1 by default."
-applyNowName: "Set this character's skills now"
-applyNowDescription: "Sets every skill of the character you are playing to the starting level, once."
+attributesName: "Starting attribute level"
+attributesDescription: "The level every attribute is set to (health follows). 40 by default; 0 keeps the race's attributes."
+raceSpellsName: "Remove racial abilities and powers"
+raceSpellsDescription: "Takes away the race's abilities, powers and spells. The birthsign's stay."
+applyNowName: "Set this character now"
+applyNowDescription: "Applies all of this to the character you are playing, once."
 '@)
     $lines.Add('data="' + (To-Android $skillsMod) + '"')
     $lines.Add("content=SkillsStartAtOne.omwscripts")
     [IO.File]::WriteAllLines((Join-Path $Momw "openmw.cfg"), $lines)
-    Write-Host "New characters get every skill at 1 after character creation (-KeepStartingSkills leaves it out)."
+    Write-Host "New characters start with skills at 1, attributes at 40 and no racial powers (-KeepStartingSkills leaves it out)."
 }
 
 # ---------------------------------------------------------------------------- handheld textures
