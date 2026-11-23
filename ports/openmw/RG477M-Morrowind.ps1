@@ -190,8 +190,8 @@ $extraMods = @(
     @{ Name = "50 Devilish Regional Weather"; Mod = 60856; File = 1000073583 },
     # bodies: Better Bodies (beast races included), its Tamriel Data races, and the Improved and
     # Westlified meshes and textures over it, last (Familiar Faces, the heads, comes with the list)
-    @{ Name = "60 Better Bodies"; Mod = 3880; File = "main" },
-    @{ Name = "61 Better Bodies for Tamriel Data"; Mod = 56715; File = "main" },
+    @{ Name = "60 Better Bodies"; Mod = 3880; File = "main"; Pick = @('data=Underwear\Data Files', 'content=Better Bodies.esp') },
+    @{ Name = "61 Better Bodies for Tamriel Data"; Mod = 56715; File = "main"; Pick = @('data=Better TR Bodies', 'content=BetterTRBodies.ESP', 'content=BetterTRBodies - Playable.ESP') },
     @{ Name = "62 Better Bodies Improved and Westlified"; Mod = 60569; File = 1000073825 },
     @{ Name = "65 Familiar Faces TD Khajiits"; Mod = 43795; File = 1000056930 },
     # Voices of Vvardenfell's voice files (Patch for Purists lines over the core ones), played by
@@ -204,9 +204,8 @@ $extraMods = @(
     @{ Name = "75 Ebonheart Underworks Voiced"; Mod = 57227; File = 1000055610 },
     @{ Name = "76 Diverse Voices"; Mod = 57971; File = 1000061836 },
     # animation, robes, daedra weapons
-    @{ Name = "79 Max Yari's Script Services"; Mod = 60256; File = "main" },
     @{ Name = "80 Hit Reactions Animated"; Mod = 56594; File = "main" },
-    @{ Name = "81 Necromancer Robes"; Mod = 51775; File = "main" },
+    @{ Name = "81 Necromancer Robes"; Mod = 51775; File = "main"; Pick = @('data=?') },
     @{ Name = "82 Necromancer Robes Integration"; Mod = 61019; File = "main" },
     @{ Name = "83 Animated Heart of Lorkhan"; Mod = 60976; File = "main" },
     @{ Name = "84 Golden Saint Equipment"; Mod = 58440; File = 1000068155 },
@@ -285,7 +284,7 @@ if ($List -eq "expanded-vanilla") {
     foreach ($old in @("60 Pluginless Roberts Bodies", "61 Pluginless Roberts Bodies TD",
             "62 Roberts Bodies Color Tweaks for Vanilla Heads", "63 New Beast Bodies Clean",
             "64 New Beast Bodies Clean Pluginless", "66 Better Bodies for Tamriel Data", "70 OpenMW Lua helper utility",
-            "81 Necromancer Robes Integration", "82 Animated Heart of Lorkhan")) {
+            "81 Necromancer Robes Integration", "82 Animated Heart of Lorkhan", "79 Max Yari's Script Services")) {
         $stale = Join-Path (Join-Path $Work "Extra") $old
         if (Test-Path -LiteralPath $stale) { Remove-Item -LiteralPath $stale -Recurse -Force }
     }
@@ -763,6 +762,7 @@ removeContent = [
   '''action-camera-swap.omwscripts''',
   '''Consuming Animated.omwscripts''',
   '''InventoryExtenderRedone.omwscripts''',
+  '''bms-IER.omwscripts''',
   '''removeSpellFix.omwaddon''',
   '''MagicWindowExtender.omwscripts''',
   '''SpellTrader.omwscripts''',
