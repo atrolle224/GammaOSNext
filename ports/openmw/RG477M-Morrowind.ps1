@@ -173,12 +173,11 @@ $extraMods = @(
     @{ Name = "40 TR Newspaper Spawns on Vvardenfell"; Mod = 56788; File = 1000054149; Pick = @('data=1. Core', 'data=2. BCOM version', 'content=TR Newspaper Spawns on Vvardenfell.ESP') },
     # weather chances only (a script); Devilish Snow and Ash are shader effects, left out
     @{ Name = "50 Devilish Regional Weather"; Mod = 60856; File = 1000073583 },
-    # bodies: vanilla-proportioned, pluginless (Familiar Faces, the heads, comes with the list)
-    @{ Name = "60 Pluginless Roberts Bodies"; Mod = 43795; File = 1000051673 },
-    @{ Name = "61 Pluginless Roberts Bodies TD"; Mod = 43795; File = 1000056925 },
-    @{ Name = "62 Roberts Bodies Color Tweaks for Vanilla Heads"; Mod = 48299; File = 1000022566 },
-    @{ Name = "63 New Beast Bodies Clean"; Mod = 47678; File = 1000017456; Pick = @('data=?') },
-    @{ Name = "64 New Beast Bodies Clean Pluginless"; Mod = 43795; File = 1000039580 },
+    # bodies: Better Bodies (beast races included), its Tamriel Data races, and the Improved and
+    # Westlified meshes and textures over it, last (Familiar Faces, the heads, comes with the list)
+    @{ Name = "60 Better Bodies"; Mod = 3880; File = "main" },
+    @{ Name = "61 Better Bodies for Tamriel Data"; Mod = 56715; File = "main" },
+    @{ Name = "62 Better Bodies Improved and Westlified"; Mod = 60569; File = 1000073825 },
     @{ Name = "65 Familiar Faces TD Khajiits"; Mod = 43795; File = 1000056930 },
     # Voices of Vvardenfell's voice files (Patch for Purists lines over the core ones), played by
     # the OpenMW patch the voice packs are made for (OpenMW 0.51 needs no Lua helper); VoV's own
@@ -268,7 +267,9 @@ if ($List -eq "expanded-vanilla") {
     $archives = Join-Path $Cache "extra"
     New-Item -ItemType Directory -Force $archives | Out-Null
     # folders of earlier versions of this list
-    foreach ($old in @("66 Better Bodies for Tamriel Data", "70 OpenMW Lua helper utility",
+    foreach ($old in @("60 Pluginless Roberts Bodies", "61 Pluginless Roberts Bodies TD",
+            "62 Roberts Bodies Color Tweaks for Vanilla Heads", "63 New Beast Bodies Clean",
+            "64 New Beast Bodies Clean Pluginless", "66 Better Bodies for Tamriel Data", "70 OpenMW Lua helper utility",
             "81 Necromancer Robes Integration", "82 Animated Heart of Lorkhan")) {
         $stale = Join-Path (Join-Path $Work "Extra") $old
         if (Test-Path -LiteralPath $stale) { Remove-Item -LiteralPath $stale -Recurse -Force }
@@ -277,8 +278,9 @@ if ($List -eq "expanded-vanilla") {
         if (-not $nexusKey) { break }
         $target = Join-Path (Join-Path $Work "Extra") $extraMod.Name
         $mark = Join-Path $target "nexus-file.txt"
-        if ($extraMod.File -isnot [string] -and (Test-Path -LiteralPath $target) -and
-                (-not (Test-Path -LiteralPath $mark) -or (Get-Content -LiteralPath $mark) -ne [string]$extraMod.File)) {
+        # unpacked by an older version of the list, or stopped part way
+        if ((Test-Path -LiteralPath $target) -and (-not (Test-Path -LiteralPath $mark) -or
+                ($extraMod.File -isnot [string] -and (Get-Content -LiteralPath $mark) -ne [string]$extraMod.File))) {
             Remove-Item -LiteralPath $target -Recurse -Force
         }
         if (Test-Path $target) { Write-Host "  $($extraMod.Name): already in Extra" }
@@ -299,9 +301,15 @@ if ($List -eq "expanded-vanilla") {
                 $api = "$modApi/$id"
                 $info = Invoke-RestMethod "$api.json" -Headers $headers
                 $archive = Join-Path $archives $info.file_name
-                if (-not (Test-Path $archive)) {
+                # a download stopped part way
+                if ((Test-Path -LiteralPath $archive) -and $info.size_in_bytes -and
+                        (Get-Item -LiteralPath $archive).Length -ne [int64]$info.size_in_bytes) {
+                    Remove-Item -LiteralPath $archive -Force
+                }
+                if (-not (Test-Path -LiteralPath $archive)) {
                     $links = Invoke-RestMethod "$api/download_link.json" -Headers $headers
-                    Invoke-WebRequest $links[0].URI -OutFile $archive
+                    Invoke-WebRequest $links[0].URI -OutFile "$archive.part"
+                    Move-Item -LiteralPath "$archive.part" -Destination $archive -Force
                 }
                 & $sevenZip x $archive "-o$target" -y | Out-Null
                 if ($LASTEXITCODE -ne 0) {
