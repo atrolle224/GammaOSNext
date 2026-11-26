@@ -62,10 +62,9 @@ public class PadAccessibilityService extends AccessibilityService {
 
     // d-pad keys held (-1/0/1), hat and stick axes from the capture window
     private int keyX, keyY;
-    private float hatX, hatY, stickX, stickY;
+    private float hatX, hatY, leftX, leftY, rightX, rightY;
     private long heldSince;
     private boolean moving;
-    private boolean cameraMode;
     private long lastCameraSwipe;
 
     private final Runnable frame = this::step;
@@ -127,8 +126,7 @@ public class PadAccessibilityService extends AccessibilityService {
             showCard(MainActivity.controls(), 9000);
         } else {
             keyX = keyY = 0;
-            hatX = hatY = stickX = stickY = 0;
-            cameraMode = false;
+            hatX = hatY = leftX = leftY = rightX = rightY = 0;
             main.removeCallbacks(frame);
             moving = false;
             setCapture(false);
@@ -200,10 +198,9 @@ public class PadAccessibilityService extends AccessibilityService {
                 return true;
             case KeyEvent.KEYCODE_BUTTON_X:
                 if (first) {
-                    cameraMode = !cameraMode;
-                    tintCursor();
-                    showCard(cameraMode ? "Camera mode: the d-pad turns the camera. X to go back."
-                            : "Cursor mode", 1500);
+                    curX = screenW / 2f;
+                    curY = screenH / 2f;
+                    placeCursor();
                 }
                 return true;
             case KeyEvent.KEYCODE_BUTTON_Y:
@@ -244,19 +241,23 @@ public class PadAccessibilityService extends AccessibilityService {
     }
 
     private void step() {
-        float dx = keyX != 0 ? keyX : (hatX != 0 ? hatX : stickX);
-        float dy = keyY != 0 ? keyY : (hatY != 0 ? hatY : stickY);
-        if (!active || (dx == 0 && dy == 0)) {
+        // either stick: cursor; d-pad: camera
+        float camX = keyX != 0 ? keyX : hatX;
+        float camY = keyY != 0 ? keyY : hatY;
+        float dx = leftX != 0 || leftY != 0 ? leftX : rightX;
+        float dy = leftX != 0 || leftY != 0 ? leftY : rightY;
+        boolean cursorMoves = dx != 0 || dy != 0;
+        boolean cameraMoves = camX != 0 || camY != 0;
+        if (!active || (!cursorMoves && !cameraMoves)) {
             moving = false;
             return;
         }
         long now = SystemClock.uptimeMillis();
-        if (cameraMode) {
-            if (now - lastCameraSwipe > 180) {
-                lastCameraSwipe = now;
-                swipeCamera(dx, dy);
-            }
-        } else {
+        if (cameraMoves && now - lastCameraSwipe > 180) {
+            lastCameraSwipe = now;
+            swipeCamera(camX, camY);
+        }
+        if (cursorMoves) {
             float base = prefs.getInt(MainActivity.KEY_SPEED, 2) * 0.25f + 0.25f;
             // speeds up over the first second of holding, for both fine aim and crossing the screen
             float ramp = Math.min(1f, (now - heldSince) / 1000f);
@@ -275,22 +276,30 @@ public class PadAccessibilityService extends AccessibilityService {
     private void onAxes(MotionEvent e) {
         hatX = Math.round(e.getAxisValue(MotionEvent.AXIS_HAT_X));
         hatY = Math.round(e.getAxisValue(MotionEvent.AXIS_HAT_Y));
+        float lx = e.getAxisValue(MotionEvent.AXIS_X);
+        float ly = e.getAxisValue(MotionEvent.AXIS_Y);
+        if (Math.hypot(lx, ly) < STICK_DEAD) {
+            lx = ly = 0;
+        }
+        // the right stick is on Z/RZ on most pads, RX/RY on some
         float rx = e.getAxisValue(MotionEvent.AXIS_Z);
         float ry = e.getAxisValue(MotionEvent.AXIS_RZ);
         if (Math.hypot(rx, ry) < STICK_DEAD) {
-            rx = e.getAxisValue(MotionEvent.AXIS_X);
-            ry = e.getAxisValue(MotionEvent.AXIS_Y);
+            rx = e.getAxisValue(MotionEvent.AXIS_RX);
+            ry = e.getAxisValue(MotionEvent.AXIS_RY);
         }
         if (Math.hypot(rx, ry) < STICK_DEAD) {
             rx = ry = 0;
         }
-        boolean wasStill = stickX == 0 && stickY == 0;
-        stickX = rx;
-        stickY = ry;
-        if (hatX != 0 || hatY != 0 || stickX != 0 || stickY != 0) {
-            if (wasStill && !moving) {
-                heldSince = SystemClock.uptimeMillis();
-            }
+        boolean wasStill = leftX == 0 && leftY == 0 && rightX == 0 && rightY == 0;
+        leftX = lx;
+        leftY = ly;
+        rightX = rx;
+        rightY = ry;
+        if (wasStill) {
+            heldSince = SystemClock.uptimeMillis();
+        }
+        if (hatX != 0 || hatY != 0 || leftX != 0 || leftY != 0 || rightX != 0 || rightY != 0) {
             startMoving();
         }
     }
@@ -322,7 +331,7 @@ public class PadAccessibilityService extends AccessibilityService {
         float len = screenH * 0.18f;
         Path p = new Path();
         p.moveTo(cx, cy);
-        p.lineTo(cx - Math.signum(dx) * len, cy - Math.signum(dy) * len * 0.6f);
+        p.lineTo(cx - dx * len, cy - dy * len * 0.6f);
         dispatch(new GestureDescription.StrokeDescription(p, 0, 150));
     }
 
@@ -412,11 +421,7 @@ public class PadAccessibilityService extends AccessibilityService {
         if (cursor == null) {
             return;
         }
-        if (cameraMode) {
-            cursor.setColorFilter(0xFF6EC6FF, android.graphics.PorterDuff.Mode.MULTIPLY);
-        } else {
-            cursor.clearColorFilter();
-        }
+        cursor.clearColorFilter();
     }
 
     /** The 1-pixel focusable window that receives the d-pad hat and sticks. */
@@ -425,7 +430,10 @@ public class PadAccessibilityService extends AccessibilityService {
             capture = new View(this) {
                 @Override
                 public boolean onGenericMotionEvent(MotionEvent e) {
-                    if ((e.getSource() & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK
+                    int src = e.getSource();
+                    if (((src & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK
+                            || (src & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
+                            || (src & InputDevice.SOURCE_DPAD) == InputDevice.SOURCE_DPAD)
                             && e.getAction() == MotionEvent.ACTION_MOVE) {
                         onAxes(e);
                         return true;
@@ -452,7 +460,7 @@ public class PadAccessibilityService extends AccessibilityService {
         } else if (!on && capture != null) {
             removeView(capture);
             capture = null;
-            hatX = hatY = stickX = stickY = 0;
+            hatX = hatY = leftX = leftY = rightX = rightY = 0;
         }
     }
 

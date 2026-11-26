@@ -28,11 +28,12 @@ public class MainActivity extends Activity {
 
     static String controls() {
         return "OSRS PAD 477M CONTROLS\n\n"
-                + "D-pad (or either stick)  -  move the cursor, faster the longer you hold\n"
+                + "Either stick  -  move the cursor, faster the longer you hold\n"
+                + "D-pad  -  turn the camera\n"
                 + "A or R3 (right stick click)  -  tap / attack / interact at the cursor\n"
                 + "B or L3 (left stick click)  -  long-press: the right-click options menu\n"
                 + "L1 / R1  -  zoom out / in\n"
-                + "X  -  camera mode: the d-pad turns the camera (cursor turns blue)\n"
+                + "X  -  cursor back to the middle of the screen\n"
                 + "Y  -  back: close the open interface\n"
                 + "Select  -  sticks on/off (off lets the touch keyboard type in chat)\n"
                 + "Start  -  show these controls\n\n"
