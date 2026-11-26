@@ -27,7 +27,7 @@ public class MainActivity extends Activity {
     private TextView tester;
 
     static String controls() {
-        return "OSRS PAD 477M CONTROLS\n\n"
+        return "OSRS PAD CONTROLS\n\n"
                 + "Left stick  -  walk a couple of steps that way\n"
                 + "Right stick  -  move the cursor, faster the longer you hold\n"
                 + "D-pad  -  turn the camera\n"
@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
         box.setPadding(pad, pad, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("OSRS Pad 477M");
+        title.setText("OSRS Pad");
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26);
         box.addView(title);
 
@@ -60,7 +60,7 @@ public class MainActivity extends Activity {
         about.setText("Plays the official Old School RuneScape app with your controller, no root needed. "
                 + "It only acts while OSRS is open, and every button press is one action.\n\n"
                 + "One-time setup:\n"
-                + "1. Tap \"Accessibility settings\" and turn on OSRS Pad 477M.\n"
+                + "1. Tap \"Accessibility settings\" and turn on OSRS Pad.\n"
                 + "2. If Android says it's a restricted setting: tap \"App info\" below, then the ⋮ menu "
                 + "(top right) → \"Allow restricted settings\", and do step 1 again.");
         about.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);

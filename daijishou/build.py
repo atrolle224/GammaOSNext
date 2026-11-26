@@ -134,7 +134,7 @@ PORTS = [
     ("ultimaonline", "Ultima Online (UOAlive)", "ultimaonline477m", "com.mobileuo.mobileuo.rg477m/com.unity3d.player.UnityPlayerActivity", "",
      "MobileUO 477M set up for UOAlive, with controller play.", "Ultima Online"),
     ("runescape", "Old School RuneScape", "osrs477m", "com.rg477m.osrspad/com.rg477m.osrspad.PlayActivity", "",
-     "The official Old School RuneScape app, opened through OSRS Pad 477M for controller play.", "Old School RuneScape"),
+     "The official Old School RuneScape app, opened through OSRS Pad for controller play.", "Old School RuneScape"),
     ("eqoa", "EverQuest Online Adventures", "eqoa477m",
      "io.github.atrolle224.eqoa477m/io.github.dabdavis.eqoa.EqoaActivity", "",
      "EQOA 477M, the native EQOA client; Sandstorm by default, the server picked in Network Setup's Preset row. "

@@ -13,7 +13,7 @@ public class PlayActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (PadAccessibilityService.instance == null) {
-            Toast.makeText(this, "Turn on OSRS Pad 477M in Accessibility settings first", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Turn on OSRS Pad in Accessibility settings first", Toast.LENGTH_LONG).show();
             startActivity(new Intent(this, MainActivity.class));
             finish();
             return;
