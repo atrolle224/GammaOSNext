@@ -66,6 +66,7 @@ public class PadAccessibilityService extends AccessibilityService {
     private long heldSince;
     private boolean moving;
     private long lastCameraSwipe;
+    private long lastWalk;
 
     private final Runnable frame = this::step;
 
@@ -241,18 +242,23 @@ public class PadAccessibilityService extends AccessibilityService {
     }
 
     private void step() {
-        // either stick: cursor; d-pad: camera
+        // left stick: walk; right stick: cursor; d-pad: camera
         float camX = keyX != 0 ? keyX : hatX;
         float camY = keyY != 0 ? keyY : hatY;
-        float dx = leftX != 0 || leftY != 0 ? leftX : rightX;
-        float dy = leftX != 0 || leftY != 0 ? leftY : rightY;
+        float dx = rightX, dy = rightY;
         boolean cursorMoves = dx != 0 || dy != 0;
         boolean cameraMoves = camX != 0 || camY != 0;
-        if (!active || (!cursorMoves && !cameraMoves)) {
+        boolean walks = Math.hypot(leftX, leftY) > 0.5;
+        if (!active || (!cursorMoves && !cameraMoves && !walks)) {
             moving = false;
             return;
         }
         long now = SystemClock.uptimeMillis();
+        // one tap a couple of tiles from the character per game tick (0.6 s)
+        if (walks && now - lastWalk > 600) {
+            lastWalk = now;
+            walk(leftX, leftY);
+        }
         if (cameraMoves && now - lastCameraSwipe > 180) {
             lastCameraSwipe = now;
             swipeCamera(camX, camY);
@@ -291,7 +297,7 @@ public class PadAccessibilityService extends AccessibilityService {
         if (Math.hypot(rx, ry) < STICK_DEAD) {
             rx = ry = 0;
         }
-        boolean wasStill = leftX == 0 && leftY == 0 && rightX == 0 && rightY == 0;
+        boolean wasStill = rightX == 0 && rightY == 0;
         leftX = lx;
         leftY = ly;
         rightX = rx;
@@ -310,6 +316,17 @@ public class PadAccessibilityService extends AccessibilityService {
         Path p = new Path();
         p.moveTo(curX, curY);
         dispatch(new GestureDescription.StrokeDescription(p, 0, ms));
+    }
+
+    /** Taps the ground about two tiles from the character, who stands in the middle of the screen. */
+    private void walk(float x, float y) {
+        double angle = Math.atan2(y, x);
+        // eight directions, like walking with the arrow keys
+        angle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+        float dist = screenH * 0.14f;
+        Path p = new Path();
+        p.moveTo(screenW / 2f + (float) Math.cos(angle) * dist, screenH / 2f + (float) Math.sin(angle) * dist);
+        dispatch(new GestureDescription.StrokeDescription(p, 0, TAP_MS));
     }
 
     private void pinch(boolean in) {
