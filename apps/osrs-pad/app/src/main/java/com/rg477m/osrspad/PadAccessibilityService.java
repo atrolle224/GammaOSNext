@@ -264,7 +264,7 @@ public class PadAccessibilityService extends AccessibilityService {
             swipeCamera(camX, camY);
         }
         if (cursorMoves) {
-            float base = prefs.getInt(MainActivity.KEY_SPEED, 2) * 0.25f + 0.25f;
+            float base = prefs.getInt(MainActivity.KEY_SPEED, 2) * 0.3f + 0.3f;
             // speeds up over the first second of holding, for both fine aim and crossing the screen
             float ramp = Math.min(1f, (now - heldSince) / 1000f);
             float speed = screenH * base * (0.35f + 0.65f * ramp) * FRAME_MS / 1000f;
