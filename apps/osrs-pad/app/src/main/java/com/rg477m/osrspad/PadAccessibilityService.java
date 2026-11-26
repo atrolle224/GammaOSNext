@@ -211,10 +211,15 @@ public class PadAccessibilityService extends AccessibilityService {
                 return true;
             case KeyEvent.KEYCODE_BUTTON_SELECT:
                 if (first) {
-                    boolean on = capture == null;
-                    setCapture(on);
-                    showCard(on ? "Sticks on" : "Sticks off: the touch keyboard works for chat. Select to turn "
-                            + "them back on.", 2500);
+                    if (capture != null) {
+                        // the capture window holds focus; without it OSRS gets the tap and opens its keyboard
+                        setCapture(false);
+                        press(TAP_MS);
+                        showCard("Chat: type on the keyboard. Select again for the sticks and d-pad.", 2500);
+                    } else {
+                        setCapture(true);
+                        showCard("Sticks and d-pad back on", 1500);
+                    }
                 }
                 return true;
             case KeyEvent.KEYCODE_BUTTON_START:

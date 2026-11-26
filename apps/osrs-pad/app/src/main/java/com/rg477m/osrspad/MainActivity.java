@@ -36,7 +36,7 @@ public class MainActivity extends Activity {
                 + "L1 / R1  -  zoom out / in\n"
                 + "X  -  cursor back to the middle of the screen\n"
                 + "Y  -  back: close the open interface\n"
-                + "Select  -  sticks on/off (off lets the touch keyboard type in chat)\n"
+                + "Select  -  chat: point the cursor at the chat box first; Select again when done\n"
                 + "Start  -  show these controls\n\n"
                 + "Touch still works as normal.";
     }
